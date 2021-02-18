@@ -6,6 +6,8 @@ To the extent possible, a module should be agnostic to the dataset, model, and a
 
 ## List of compatible models and datasets
 
+An up to date list of which modules work with with models and datasets are shown here.
+
 | Module                           | Model           | Dataset                   |
 |:---------------------------------|:----------------|:--------------------------|
 | `CAEBaseModule`                  | `ReferenceCAE`  | `LunarAnalogueDataModule` |
