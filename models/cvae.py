@@ -86,6 +86,7 @@ class VariationalAutoEncoder(pl.LightningModule):
 
     def encode(self, input: Tensor) -> List[Tensor]:
         """
+        Receives an input image and outputs the mean and the logvar for the distribution q(z|x)
         """
         result = self.encoder(input)
         result = torch.flatten(result, start_dim=1)
@@ -99,6 +100,7 @@ class VariationalAutoEncoder(pl.LightningModule):
 
     def decode(self, z: Tensor) -> Tensor:
         """
+        Receives a variable sampled from q(z) and transforms it back to p(x|z)
         """
         result = self.decoder_input(z)
         result = result.view(-1, 512, 2, 2)
@@ -109,9 +111,10 @@ class VariationalAutoEncoder(pl.LightningModule):
 
     def reparametrize(self, mu: Tensor, log_var: Tensor) -> Tensor:
         """
-        Reparametrization trick
+        Reparametrization trick to enable back propagation while maintaining 
+        stochasticity by injecting a randomly sampled variable 
 
-        z = mu + std*error
+        z = mu + std*eps
         """
 
         std = torch.exp(0.5 * log_var)
@@ -120,6 +123,10 @@ class VariationalAutoEncoder(pl.LightningModule):
         return mu + std * eps
 
     def forward(self, input: Tensor, **kwargs) -> List[Tensor]
+        """
+        Receives an input image and returns the reconstruction, input image,
+        and the mean and logvar of the Gaussian q(z|x)
+        """
 
         mu, log_var = self.encode(input)
         z = self.reparametrize(mu, log_var)
@@ -128,7 +135,9 @@ class VariationalAutoEncoder(pl.LightningModule):
 
     def loss_function(self, *args, **kwargs) -> dict:
         """
-        Compute ELBO loss
+        Compute Evidence Lower Bound (elbo) loss
+
+        elbo = reconstruction loss + Kullback-Leibler divergence
         """
 
         reconstruction = args[0]
@@ -143,11 +152,11 @@ class VariationalAutoEncoder(pl.LightningModule):
 
         elbo_loss = reconstruction_loss + kld_weight * kld_loss
 
-        return {'loss': loss, 'reconstruction_loss':reconstruction_loss, 'KLD': -kld_loss}
+        return {'loss': elbo_loss, 'reconstruction_loss':reconstruction_loss, 'KLD': -kld_loss}
 
     def sample(self, num_samples: int, current_device: int, **kwargs) -> Tensor:
         """
-        Sample from latent space
+        Sample z from latent space q(z) and return reconstruction p(x|z)
         """
 
         z = torch.randn(num_samples, self.latent_dims)
@@ -159,7 +168,7 @@ class VariationalAutoEncoder(pl.LightningModule):
 
     def generate(self, x: Tensor, **kwargs) -> Tensor:
         """
-        Sample from q(z|x) and return reconstruction
+        Sample from q(z|x) and return reconstruction p(x|z)
         """
 
         return self.forward(x)[0]
