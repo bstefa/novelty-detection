@@ -7,6 +7,8 @@ from torchvision.datasets import MNIST
 from torchvision import datasets, transforms
 import os
 
+from utils import dtypes
+
 class VariationalAutoEncoder(pl.LightningModule):
 
     def __init__(self,
