@@ -1,4 +1,3 @@
-import torchvision.transforms as tf
 import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,8 +18,11 @@ def config_from_command_line(default_config: str):
         raise ValueError('More than one configuration file was provided.')
 
 
-def chw2hwc(x: torch.Tensor):
-    return x.permute(1, 2, 0)
+def chw2hwc(x):
+    if isinstance(x, torch.Tensor):
+        return x.permute(1, 2, 0)
+    if isinstance(x, np.array):
+        return np.transpose(x, (1, 2, 0))
 
 
 def unstandardize_batch(batch_in: torch.Tensor, tol: float = 0.01):
@@ -78,6 +80,42 @@ def get_error_map(x_input, x_output, use_batch: bool = True, tol: float = 0.001)
     assert torch.min(x_err) > (0.0 - tol), 'The minimum pixel intensity is out of range'
     return x_err
 
+class BatchStatistics(object):
+    '''
+    Evaluates statistics on input batch, accessible as member functions
+    for easy, on the fly access.
+    '''
+    def __init__(self, batch_in):
+        if isinstance(batch_in, torch.Tensor):
+            # Detach tensor from comp graph, clone to cpu, convert to numpy
+            batch_in = batch_in.detach().clone().to(device='cpu').numpy()
+        assert isinstance(batch_in, np.ndarray), 'Batch wasn\'t successfully converted to numpy'
+        assert len(batch_in.shape) == 4, 'Only accepts batches of shape (B, H, W, C)'
+        self.batch_in = batch_in
+
+
+    # The main purpose of any decorator is to change your class methods or
+    # attributes in such a way so that the user of your class no need to
+    # make any change in their code.
+    @property
+    def shape(self):
+        return self.batch_in.shape
+
+    @property
+    def mean(self):
+        return np.mean(self.batch_in)
+
+    @property
+    def min(self):
+        return np.min(self.batch_in)
+
+    @property
+    def max(self):
+        return np.max(self.batch_in)
+
+    @property
+    def std(self):
+        return np.std(self.batch_in)
 
 class PreprocessingPipeline:
     '''
@@ -114,25 +152,27 @@ class PreprocessingPipeline:
         for c in range(n_channels):
             image[..., c] = (image[..., c] - image[..., c].mean()) / image[..., c].std()
 
-        ### print('Resulting image statistics: ', image.max(), image.min(), image.mean(), image.std())
-
         return image
 
 
 if __name__ == '__main__':
-    from lunar_dataset import LunarAnalogueDataset
 
-    # !Temporary constants
-    ROOT_DATA_PATH = '/home/brahste/Datasets/LunarAnalogue/images-screened'
+    from datasets.lunar_analogue import LunarAnalogueDataGenerator
 
-    dataset = LunarAnalogueDataset(ROOT_DATA_PATH)
-    image = dataset[552]  # arbitrary
+    config = config_from_command_line('configs/pca.yaml')
+    data_obj = LunarAnalogueDataGenerator(config)
+    gen = data_obj.create_generator('train')
 
-    im_out = PreprocessingPipeline()(image)
+    batch = next(gen)
 
-    fig = plt.figure()
-    ax1 = fig.add_subplot(211)
-    ax1.imshow(image)
-    ax2 = fig.add_subplot(212)
-    ax2.imshow(im_out);
-    plt.show()
+    bstat_obj = BatchStatistics(batch)
+    print(bstat_obj.mean)
+
+
+    #
+    # fig = plt.figure()
+    # ax1 = fig.add_subplot(211)
+    # ax1.imshow(image)
+    # ax2 = fig.add_subplot(212)
+    # ax2.imshow(im_out);
+    # plt.show()
