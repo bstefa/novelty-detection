@@ -7,9 +7,9 @@ from torchvision.datasets import MNIST
 from torchvision import datasets, transforms
 import os
 
-from utils import dtypes
+from utils.dtypes import *
 
-class VariationalAutoEncoder(pl.LightningModule):
+class VariationalAutoEncoder(nn.Module):
 
     def __init__(self,
                 in_channels: int,
@@ -18,7 +18,7 @@ class VariationalAutoEncoder(pl.LightningModule):
                 input_height: int,
                 input_width: int):
 
-        super().__init__()
+        super(VariationalAutoEncoder, self).__init__()
 
         self.latent_dims = latent_dims
 
