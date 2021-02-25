@@ -53,6 +53,10 @@ class LunarAnalogueDataset(torch.utils.data.Dataset):
 
         return image
 
+    def get_labels(self, idx: int):
+
+        return str(self._list_of_image_paths[idx])
+
 
 class LunarAnalogueDataGenerator:
     def __init__(self, config: dict):
@@ -80,17 +84,26 @@ class LunarAnalogueDataGenerator:
                 train=False,
                 transforms=self._transforms
             )
+        print(f'Initializing new {stage} generator with {len(dataset)} samples...')
 
-        batch_out = np.empty( (*(self._batch_size,), *dataset[0].shape) )
+        # Declare empty array to be populated with items from the Dataset
+        batch_out = np.empty( (self._batch_size, *dataset[0].shape) )
+        label_out = np.empty( (self._batch_size,), dtype=object )
         batch_nb = 0
 
-        while batch_nb <= (len(dataset) // self._batch_size):
+        while batch_nb < (len(dataset) // self._batch_size):
             for i in range(self._batch_size):
+                # Use sliding batch number approach to select which data to 
+                # generate
                 batch_out[i] = dataset[batch_nb * self._batch_size + i]
+                label_out[i] = dataset.get_labels(batch_nb * self._batch_size + i)
 
             batch_nb += 1
-            yield batch_out
-            # Note that to use this generator you have to iterate over
+            if stage == 'train':
+                yield batch_out
+            elif stage == 'test':
+                yield batch_out
+            # Note that to use this generator you have to *iterate* over
             # the output as it's not all read into memory at once.
 
 class LunarAnalogueDataModule(pl.core.datamodule.LightningDataModule):
