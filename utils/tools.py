@@ -9,13 +9,29 @@ import yaml
 
 def config_from_command_line(default_config: str):
     if len(sys.argv) == 1:
-        with open(default_config) as f:
-            return yaml.full_load(f)
+        # Then the file being called is the only argument
+        # so return the default configuration
+        config_file = default_config
     elif len(sys.argv) == 2:
-        with open(str(sys.argv[0])) as f:
-            return yaml.full_load(f)
+        # Then a specific configuration file has been used
+        # so load it
+        config_file = sys.argv[0]
+    elif all([len(sys.argv) == 3, sys.argv[1] == '-f']):
+        config_file = default_config
     else:
-        raise ValueError('More than one configuration file was provided.')
+        print(sys.argv)
+        raise ValueError('CLI only accepts 0 args (default) or 1 arg (path/to/config).')
+
+    with open(str(config_file)) as f:
+        y = yaml.full_load(f)
+        print(f'Experimental parameters\n-----------------------')
+        print('\n'.join(f'{k}: {v}' for k, v in y.items()), '\n')
+        return y
+
+
+def config_from_file(config_file: str):
+    with open(str(config_file)) as f:
+        y = yaml.full_load(f)
 
 
 def chw2hwc(x):
@@ -59,27 +75,38 @@ def unstandardize_batch(batch_in: torch.Tensor, tol: float = 0.01):
     return batch
 
 
-def get_error_map(x_input, x_output, use_batch: bool = True, tol: float = 0.001):
-    # Note that these operations are for batches
-    x_in = x_input.detach().clone().to(device='cpu')
-    x_out = x_output.detach().clone().to(device='cpu')
-    x_err = F.mse_loss(x_in, x_out, reduction='none')
+def get_error_map(x_input, x_output, tol: float = 0.001):
+    if isinstance(x_output, torch.Tensor):
+        # Note that these operations are for batches
+        x_in = x_input.detach().clone().to(device='cpu')
+        x_out = x_output.detach().clone().to(device='cpu')
+        x_err = F.mse_loss(x_in, x_out, reduction='none')
 
-    if len(x_in.shape) == 4:
-        # Convert each image in the batch to range [0,1]
-        for e in range(len(x_err)):
-            x_err[e] = x_err[e] / torch.max(x_err[e])
-    elif len(x_in.shape) == 3:
-        # Convert the single image to range [0,1]
-        x_err = x_err / torch.max(x_err)
-    else:
-        raise ValueError('Input to error_map must be of shape 3 or 4')
+        if len(x_in.shape) == 4:
+            # Convert each image in the batch to range [0,1]
+            for e in range(len(x_err)):
+                x_err[e] = x_err[e] / torch.max(x_err[e])
+        elif len(x_in.shape) == 3:
+            # Convert the single image to range [0,1]
+            x_err = x_err / torch.max(x_err)
+        else:
+            raise ValueError('Input to error_map must be of shape 3 or 4')
 
-    # Some basic assertions to ensure correct range manipulation
-    assert torch.max(x_err) < (1.0 + tol), 'The maximum pixel intensity is out of range'
-    assert torch.min(x_err) > (0.0 - tol), 'The minimum pixel intensity is out of range'
-    return x_err
+        # Some basic assertions to ensure correct range manipulation
+        assert torch.max(x_err) < (1.0 + tol), 'The maximum pixel intensity is out of range'
+        assert torch.min(x_err) > (0.0 - tol), 'The minimum pixel intensity is out of range'
+        return x_err
+    if isinstance(x_output, np.ndarray):
+        x_err = x_input - x_output
+        return x_err / np.max(np.abs(x_err))
 
+def gaussian_window(mean, std):
+    x = np.linspace(mean - 3.5*std, mean + 3.5*std, 100)
+    coefficient = (1 / std*(2*np.pi)**(-1/2) )
+    argument = (-1/2)*( ((x - mean)/std)**2 )
+    return np.exp(argument)
+
+# INCOMPLETE: DO NOT USE
 class BatchStatistics(object):
     '''
     Evaluates statistics on input batch, accessible as member functions
@@ -90,7 +117,6 @@ class BatchStatistics(object):
             # Detach tensor from comp graph, clone to cpu, convert to numpy
             batch_in = batch_in.detach().clone().to(device='cpu').numpy()
         assert isinstance(batch_in, np.ndarray), 'Batch wasn\'t successfully converted to numpy'
-        assert len(batch_in.shape) == 4, 'Only accepts batches of shape (B, H, W, C)'
         self.batch_in = batch_in
 
 
@@ -107,11 +133,15 @@ class BatchStatistics(object):
 
     @property
     def min(self):
-        return np.min(self.batch_in)
+        return np.amin(self.batch_in)
 
     @property
     def max(self):
-        return np.max(self.batch_in)
+        return np.amax(self.batch_in)
+
+    @property
+    def extremum(self):
+        return np.amax(np.amax(self.batch_in), np.abs(np.amin(self.batch_in)))
 
     @property
     def std(self):
