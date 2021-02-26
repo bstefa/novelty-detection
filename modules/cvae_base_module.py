@@ -90,13 +90,17 @@ class CVAEBaseModule(pl.LightningModule):
 
         del test_input, recons #, samples
 
-    @data_loader
+    @pl.data_loader
     def train_dataloader(self):
         return self.dm.train_dataloader()
 
-    @data_loader
+    @pl.data_loader
     def val_dataloader(self):
         return self.dm.val_dataloader()
+
+    @pl.data_loader
+    def test_dataloader(self):
+        return self.dm.test_dataloader()
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.model.parameters(),
