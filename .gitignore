@@ -1,0 +1,10 @@
+**/.spyproject
+**/__pycache__/
+**/logs/
+
+.idea/
+.vscode/
+
+# Files to ignore
+lr_find_temp_model.ckpt
+scale_batch_size_temp_model.ckpt
