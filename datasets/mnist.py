@@ -8,13 +8,14 @@ class MNISTDataModule(pl.LightningDataModule):
 
     def __init__(
             self,
+            config: dict,
             transforms: Optional[transforms.Compose] = None
         ):
 
         super(MNISTDataModule, self).__init__()
 
-        self.download_dir = "./downloads"
-        self.batch_size = 32
+        self.download_dir = config['dataset_download_dir']
+        self.batch_size = config['batch_size']
         self.transforms = transforms
 
         if os.path.isdir(self.download_dir) == False:
@@ -40,8 +41,8 @@ class MNISTDataModule(pl.LightningDataModule):
         self.train_data, self.val_data = random_split(data, [55000, 5000])
   
         self.test_data = datasets.MNIST(self.download_dir, 
-                                        train = False, 
-                                        transform = self.transform)
+                                        train=False, 
+                                        transform=self.transform)
 
     def train_dataloader(self):
         return DataLoader(

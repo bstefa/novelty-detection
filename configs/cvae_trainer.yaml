@@ -1,0 +1,35 @@
+  # [root_data_path, required] should be specified to the user's system, pointing to the
+  # root folder containing the data.
+root_data_path: '/home/brahste/Datasets/LunarAnalogue'
+
+  # [glob_pattern_train, required] should be specified to the file structure of the data
+  # on the user's system.
+glob_pattern_train: '**/all/*.jpeg'
+
+  # [glob_pattern_test, required] should be specified to the file structure of the data
+  # on the user's system.
+glob_pattern_test: '.tbd'
+
+  # [train_fraction, required] floating point value that specifies the portion of training
+  # data to use for training, 1 - train_fraction will be used for validation.
+train_fraction: 0.75
+
+  # [batch_size, optional] batch size to use for data; if 'null' then the batch
+  # size will be set automatically during training. ***INCOMPLETE
+batch_size: 32
+
+  # [experiment_name, optional] name used when logging the experiment, version number is
+  # automatically appended; if 'null' then the name of the model class will be used. ***INCOMPLETE
+experiment_name: 'RCAE'
+
+  # [log_directory, optoinal] directory to save logs to; if 'null' then defaults to
+  # '.region_detector/logs' ***INCOMPLETE
+log_directory: '.region_detector/logs'
+
+  # [learning_rate, optional] learning rate used during training; if 'null' then the
+  # learning rate is set automatically set during training with rate schedulers. INCOMPLETE
+learning_rate: 0.003
+
+  # Download directory for toy datasets
+dataset_download_dir: '/home/fenrir/Documents/novelty-detection/downloads'
+
