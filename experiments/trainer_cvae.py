@@ -9,11 +9,13 @@ def main():
     DEFAULT_CONFIG_FILE = 'configs/trainer_cae_reference.yaml'
     config = tools.config_from_command_line(DEFAULT_CONFIG_FILE)
 
-    datamodule = MNISTDataModule()
+    datamodule = MNISTDataModule(config)
 
-    model = VariationalAutoEncoder(1, 28, 28, 10, [6, 12, 24])
-
-    print(model)
+    model = VariationalAutoEncoder(input_channels=1, 
+    							   input_height=28, 
+    							   input_width=28, 
+    							   latent_dims=10, 
+    							   hidden_dims=[6, 12, 24])
 
     module = CVAEBaseModule(datamodule, model, config)
 

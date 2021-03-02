@@ -12,7 +12,7 @@ from utils.dtypes import *
 class VariationalAutoEncoder(nn.Module):
 
     def __init__(self,
-                in_channels: int,
+                input_channels: int,
                 input_height: int,
                 input_width: int,
                 latent_dims: int,
@@ -30,7 +30,7 @@ class VariationalAutoEncoder(nn.Module):
         for h_dim in hidden_dims:
             modules.append(
                 nn.Sequential(
-                    nn.Conv2d(in_channels, 
+                    nnput.Conv2d(in_channels, 
                               out_channels=h_dim,
                               kernel_size= 3, 
                               stride= 2, 
@@ -38,7 +38,7 @@ class VariationalAutoEncoder(nn.Module):
                     nn.BatchNorm2d(h_dim),
                     nn.LeakyReLU())
             )
-            in_channels = h_dim
+            input_channels = h_dim
 
         self.encoder = nn.Sequential(*modules)
 
