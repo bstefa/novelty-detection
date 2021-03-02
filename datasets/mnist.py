@@ -3,6 +3,7 @@ import pytorch_lightning as pl
 from typing import Optional, Generic
 from torch.utils.data import random_split, DataLoader
 from torchvision import datasets, transforms
+from pprint import pprint as pp
 
 class MNISTDataModule(pl.LightningDataModule):
 
@@ -42,7 +43,7 @@ class MNISTDataModule(pl.LightningDataModule):
   
         self.test_data = datasets.MNIST(self.download_dir, 
                                         train=False, 
-                                        transform=self.transform)
+                                        transform=self.transforms)
 
     def train_dataloader(self):
         return DataLoader(
@@ -61,3 +62,32 @@ class MNISTDataModule(pl.LightningDataModule):
             self.test_data,
             batch_size=self.batch_size,
             num_workers=4)
+
+if __name__ == '__main__':
+
+    # Load test configs
+    test_configs = {
+                    'dataset_download_dir': '/home/fenrir/Documents/novelty-detection/downloads',
+                    'batch_size': 32
+                    }
+
+    # Initialize transforms
+    data_transforms = transforms.Compose([
+        transforms.ToTensor()
+    ])
+
+    # Create data module object
+    datamodule = MNISTDataModule(test_configs, data_transforms)
+
+    # Prepare and setup data
+    datamodule.prepare_data()
+    datamodule.setup()
+
+    # Load train_dataloader
+    dataloader = datamodule.train_dataloader()
+
+    # Grabe a pair of (batch, x) and (batch, y)
+    sample, labels = next(iter(dataloader))
+
+    pp(sample.shape)
+    pp(labels.shape)
