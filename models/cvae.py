@@ -13,10 +13,10 @@ class VariationalAutoEncoder(nn.Module):
 
     def __init__(self,
                 in_channels: int,
-                latent_dims: int,
-                hidden_dims: List = None,
                 input_height: int,
-                input_width: int):
+                input_width: int,
+                latent_dims: int,
+                hidden_dims: List = None):
 
         super(VariationalAutoEncoder, self).__init__()
 
@@ -122,7 +122,7 @@ class VariationalAutoEncoder(nn.Module):
 
         return mu + std * eps
 
-    def forward(self, input: Tensor, **kwargs) -> List[Tensor]
+    def forward(self, input: Tensor, **kwargs) -> List[Tensor]:
         """
         Receives an input image and returns the reconstruction, input image,
         and the mean and logvar of the Gaussian q(z|x)

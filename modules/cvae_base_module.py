@@ -90,15 +90,12 @@ class CVAEBaseModule(pl.LightningModule):
 
         del test_input, recons #, samples
 
-    @pl.data_loader
     def train_dataloader(self):
         return self.dm.train_dataloader()
 
-    @pl.data_loader
     def val_dataloader(self):
         return self.dm.val_dataloader()
 
-    @pl.data_loader
     def test_dataloader(self):
         return self.dm.test_dataloader()
 

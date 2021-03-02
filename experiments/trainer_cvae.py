@@ -1,7 +1,8 @@
 import pytorch_lightning as pl
 from models.cvae import VariationalAutoEncoder
-from dataset.mnist import MNISTDataModule
+from datasets.mnist import MNISTDataModule
 from modules.cvae_base_module import CVAEBaseModule
+from utils import tools
 
 def main():
 	# Set defaults
@@ -10,7 +11,9 @@ def main():
 
     datamodule = MNISTDataModule()
 
-    model = VariationalAutoEncoder(1, 10, [6, 12, 24], 28, 28)
+    model = VariationalAutoEncoder(1, 28, 28, 10, [6, 12, 24])
+
+    print(model)
 
     module = CVAEBaseModule(datamodule, model, config)
 
