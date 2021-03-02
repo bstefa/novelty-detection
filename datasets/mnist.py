@@ -15,15 +15,11 @@ class MNISTDataModule(pl.LightningDataModule):
 
         self.download_dir = "./downloads"
         self.batch_size = 32
-        self.transforms = transforms.Compose([
+        self.transforms = transforms
 
-            transforms.ToTensor()
-
-        ])
-
-        if os.path.isdir(download_dir) == False:
+        if os.path.isdir(self.download_dir) == False:
             print("Creating download directory")
-            os.makedirs(download_dir)
+            os.makedirs(self.download_dir)
 
     def prepare_data(self):
 
@@ -35,7 +31,7 @@ class MNISTDataModule(pl.LightningDataModule):
             train=False,
             download=True)
 
-    def setup(self, stage=Optional[str]=None):
+    def setup(self, stage: Optional[str]=None):
 
         data = datasets.MNIST(self.download_dir,
                               train=True,
@@ -63,4 +59,4 @@ class MNISTDataModule(pl.LightningDataModule):
         return DataLoader(
             self.test_data,
             batch_size=self.batch_size,
-            num_workers=4z)
+            num_workers=4)
