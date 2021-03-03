@@ -27,38 +27,35 @@ class PCABaseModule(object):
         entire dataset.
         Returns self
         '''
-        kf = model_selection.KFold(n_splits=10)
+        # TODO: Consider doing cross validation (say, 10-fold) on each batch
+        for batch_nb, batch_tr_in in enumerate(self.dg.trainval_generator('train')):
+            print(f'[BATCH {batch_nb}] Fitting...')
+            self.model.partial_fit(self._flatten_batch(batch_tr_in))
 
-        yielder = kf.split()
-        for batch_nb, batch_in in enumerate(self.dg.create_generator('train')):
-            self.model.partial_fit(self._flatten_batch(batch_in))
-            print('Fit: ', batch_nb)
+            running_novelty_score = 0
+            for batch_vl_nb, batch_vl_in in enumerate(self.dg.trainval_generator('val')):
+                batch_vl_rd = self.model.transform(self._flatten_batch(batch_vl_in))
+                batch_vl_rc = self.model.inverse_transform(batch_vl_rd).reshape(batch_vl_in.shape)
 
-            if batch_nb % 5 == 4:
-                # Compute batch-wise reconstruction
-                batch_rd = self.model.transform(self._flatten_batch(batch_in))
-                batch_rc = self.inverse_transform(batch_rd).reshape(batch_in.shape)
-                # Operate on each image-pair independently
-                for x_nb, (x_hat, x) in enumerate(zip(batch_rc, batch_in)):
-                    assert len(x.shape) == 3, 'Can only operate on H,W,C image-data'
-                    # TODO: Consider using alternative losses here
-                    image_novelty_score = losses.squared_error(
+                # Run validation on batch
+                for x_hat, x in zip(batch_vl_rc, batch_vl_in):
+                    assert len(x.shape) == 3 and len(x_hat.shape), 'Only accepts H,W,C image-data'
+                    running_novelty_score += losses.squared_error(
                         x,
                         x_hat,
-                        show_plot=True,
+                        show_plot=(True if batch_nb % 10 == 9 else False),
                         return_map=False
                     )
-                    break
+            print(f'[BATCH {batch_nb}] Validation novelty score {running_novelty_score/(len(batch_vl_in)*batch_vl_nb)}')
 
             if fast_dev_run > 0 and batch_nb == (fast_dev_run - 1):
                 return self
                 break
         return self
 
-    '''Consider writing this training pipeline right into the PCA experiment'''
     def transform_pipeline(self, fast_dev_run: int=0):
         novelty_scores = []
-        for batch_nb, (batch_rd, batch_in) in enumerate(self.transform_generator('test')):
+        for batch_nb, (batch_rd, batch_in, batch_label) in enumerate(self.transform_generator()):
             print('Transform: ', batch_nb)
             # Compute batch-wise reconstruction
             batch_rc = self.inverse_transform(batch_rd).reshape(batch_in.shape)
@@ -80,15 +77,16 @@ class PCABaseModule(object):
         # TODO: This is an ideal place to return a BatchStatistics object in the future
         return np.array(novelty_scores)
 
-    def transform_generator(self, stage: str='test'):
-        '''
+    def transform_generator(self):
+        """
         Generator. Generates data and transforms it with a trained PCA model
         on the fly. Useful for iterating through the results and working with the transformations
-            Returns a tuple generator (reduced data--flattened, input data--image shape)
+
+        Returns a tuple generator (reduced data--flattened, input data--image shape)
         that can ce called as an iterable.
-        '''
-        for batch_in in self.dg.create_generator(stage):
-            yield self.model.transform(self._flatten_batch(batch_in)), batch_in
+        """
+        for batch_in, batch_label in self.dg.test_generator():
+            yield self.model.transform(self._flatten_batch(batch_in)), batch_in, batch_label
 
     def inverse_transform(self, reduced_batch_in):
         '''
