@@ -3,6 +3,7 @@
 **/logs/
 **/.idea/
 **/.ipynb_checkpoints/
+**/saved-models/
 
 .vscode
 

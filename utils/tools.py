@@ -24,7 +24,7 @@ def config_from_command_line(default_config: str):
 
     with open(str(config_file)) as f:
         y = yaml.full_load(f)
-        print(f'Experimental parameters\n-----------------------')
+        print(f'Experimental parameters\n------')
         print('\n'.join(f'{k}: {v}' for k, v in y.items()), '\n')
         return y
 
