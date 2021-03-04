@@ -1,4 +1,3 @@
-import torchvision.transforms as tf
 import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,17 +9,36 @@ import yaml
 
 def config_from_command_line(default_config: str):
     if len(sys.argv) == 1:
-        with open(default_config) as f:
-            return yaml.full_load(f)
+        # Then the file being called is the only argument
+        # so return the default configuration
+        config_file = default_config
     elif len(sys.argv) == 2:
-        with open(str(sys.argv[0])) as f:
-            return yaml.full_load(f)
+        # Then a specific configuration file has been used
+        # so load it
+        config_file = sys.argv[0]
+    elif all([len(sys.argv) == 3, sys.argv[1] == '-f']):
+        config_file = default_config
     else:
-        raise ValueError('More than one configuration file was provided.')
+        print(sys.argv)
+        raise ValueError('CLI only accepts 0 args (default) or 1 arg (path/to/config).')
+
+    with open(str(config_file)) as f:
+        y = yaml.full_load(f)
+        print(f'Experimental parameters\n------')
+        print('\n'.join(f'{k}: {v}' for k, v in y.items()), '\n')
+        return y
 
 
-def chw2hwc(x: torch.Tensor):
-    return x.permute(1, 2, 0)
+def config_from_file(config_file: str):
+    with open(str(config_file)) as f:
+        y = yaml.full_load(f)
+
+
+def chw2hwc(x):
+    if isinstance(x, torch.Tensor):
+        return x.permute(1, 2, 0)
+    if isinstance(x, np.array):
+        return np.transpose(x, (1, 2, 0))
 
 
 def unstandardize_batch(batch_in: torch.Tensor, tol: float = 0.01):
@@ -57,27 +75,77 @@ def unstandardize_batch(batch_in: torch.Tensor, tol: float = 0.01):
     return batch
 
 
-def get_error_map(x_input, x_output, use_batch: bool = True, tol: float = 0.001):
-    # Note that these operations are for batches
-    x_in = x_input.detach().clone().to(device='cpu')
-    x_out = x_output.detach().clone().to(device='cpu')
-    x_err = F.mse_loss(x_in, x_out, reduction='none')
+def get_error_map(x_input, x_output, tol: float = 0.001):
+    if isinstance(x_output, torch.Tensor):
+        # Note that these operations are for batches
+        x_in = x_input.detach().clone().to(device='cpu')
+        x_out = x_output.detach().clone().to(device='cpu')
+        x_err = F.mse_loss(x_in, x_out, reduction='none')
 
-    if len(x_in.shape) == 4:
-        # Convert each image in the batch to range [0,1]
-        for e in range(len(x_err)):
-            x_err[e] = x_err[e] / torch.max(x_err[e])
-    elif len(x_in.shape) == 3:
-        # Convert the single image to range [0,1]
-        x_err = x_err / torch.max(x_err)
-    else:
-        raise ValueError('Input to error_map must be of shape 3 or 4')
+        if len(x_in.shape) == 4:
+            # Convert each image in the batch to range [0,1]
+            for e in range(len(x_err)):
+                x_err[e] = x_err[e] / torch.max(x_err[e])
+        elif len(x_in.shape) == 3:
+            # Convert the single image to range [0,1]
+            x_err = x_err / torch.max(x_err)
+        else:
+            raise ValueError('Input to error_map must be of shape 3 or 4')
 
-    # Some basic assertions to ensure correct range manipulation
-    assert torch.max(x_err) < (1.0 + tol), 'The maximum pixel intensity is out of range'
-    assert torch.min(x_err) > (0.0 - tol), 'The minimum pixel intensity is out of range'
-    return x_err
+        # Some basic assertions to ensure correct range manipulation
+        assert torch.max(x_err) < (1.0 + tol), 'The maximum pixel intensity is out of range'
+        assert torch.min(x_err) > (0.0 - tol), 'The minimum pixel intensity is out of range'
+        return x_err
+    if isinstance(x_output, np.ndarray):
+        x_err = x_input - x_output
+        return x_err / np.max(np.abs(x_err))
 
+def gaussian_window(mean, std):
+    x = np.linspace(mean - 3.5*std, mean + 3.5*std, 100)
+    coefficient = (1 / std*(2*np.pi)**(-1/2) )
+    argument = (-1/2)*( ((x - mean)/std)**2 )
+    return np.exp(argument)
+
+# INCOMPLETE: DO NOT USE
+class BatchStatistics(object):
+    '''
+    Evaluates statistics on input batch, accessible as member functions
+    for easy, on the fly access.
+    '''
+    def __init__(self, batch_in):
+        if isinstance(batch_in, torch.Tensor):
+            # Detach tensor from comp graph, clone to cpu, convert to numpy
+            batch_in = batch_in.detach().clone().to(device='cpu').numpy()
+        assert isinstance(batch_in, np.ndarray), 'Batch wasn\'t successfully converted to numpy'
+        self.batch_in = batch_in
+
+
+    # The main purpose of any decorator is to change your class methods or
+    # attributes in such a way so that the user of your class no need to
+    # make any change in their code.
+    @property
+    def shape(self):
+        return self.batch_in.shape
+
+    @property
+    def mean(self):
+        return np.mean(self.batch_in)
+
+    @property
+    def min(self):
+        return np.amin(self.batch_in)
+
+    @property
+    def max(self):
+        return np.amax(self.batch_in)
+
+    @property
+    def extremum(self):
+        return np.amax(np.amax(self.batch_in), np.abs(np.amin(self.batch_in)))
+
+    @property
+    def std(self):
+        return np.std(self.batch_in)
 
 class PreprocessingPipeline:
     '''
@@ -114,25 +182,27 @@ class PreprocessingPipeline:
         for c in range(n_channels):
             image[..., c] = (image[..., c] - image[..., c].mean()) / image[..., c].std()
 
-        ### print('Resulting image statistics: ', image.max(), image.min(), image.mean(), image.std())
-
         return image
 
 
 if __name__ == '__main__':
-    from lunar_dataset import LunarAnalogueDataset
 
-    # !Temporary constants
-    ROOT_DATA_PATH = '/home/brahste/Datasets/LunarAnalogue/images-screened'
+    from datasets.lunar_analogue import LunarAnalogueDataGenerator
 
-    dataset = LunarAnalogueDataset(ROOT_DATA_PATH)
-    image = dataset[552]  # arbitrary
+    config = config_from_command_line('configs/incremental_pca.yaml')
+    data_obj = LunarAnalogueDataGenerator(config)
+    gen = data_obj.create_generator('train')
 
-    im_out = PreprocessingPipeline()(image)
+    batch = next(gen)
 
-    fig = plt.figure()
-    ax1 = fig.add_subplot(211)
-    ax1.imshow(image)
-    ax2 = fig.add_subplot(212)
-    ax2.imshow(im_out);
-    plt.show()
+    bstat_obj = BatchStatistics(batch)
+    print(bstat_obj.mean)
+
+
+    #
+    # fig = plt.figure()
+    # ax1 = fig.add_subplot(211)
+    # ax1.imshow(image)
+    # ax2 = fig.add_subplot(212)
+    # ax2.imshow(im_out);
+    # plt.show()
