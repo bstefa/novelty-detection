@@ -16,11 +16,11 @@ train_fraction: 0.9
 
   # [batch_size, optional] batch size to use for data; if 'null' then the batch
   # size will be set automatically during training. ***INCOMPLETE
-batch_size: 10
+batch_size: 200
 
   # [experiment_name, optional] name used when logging the experiment, version number is
   # automatically appended; if 'null' then the name of the model class will be used. ***INCOMPLETE
-experiment_name: 'PCA'
+experiment_name: 'IncrementalPCA'
 
   # [log_directory, optoinal] directory to save logs to; if 'null' then defaults to
   # '.region_detector/logs' ***INCOMPLETE

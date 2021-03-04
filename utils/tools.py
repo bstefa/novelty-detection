@@ -189,7 +189,7 @@ if __name__ == '__main__':
 
     from datasets.lunar_analogue import LunarAnalogueDataGenerator
 
-    config = config_from_command_line('configs/pca.yaml')
+    config = config_from_command_line('configs/incremental_pca.yaml')
     data_obj = LunarAnalogueDataGenerator(config)
     gen = data_obj.create_generator('train')
 

@@ -22,6 +22,7 @@ def squared_error(x, x_hat, show_plot: bool=False, return_map: bool=True):
             ax[1].set_title(f'x_hat: [{x_hat_stats.min:.2f}, {x_hat_stats.max:.2f}]')
             ax[2].imshow(tools.unstandardize_batch(x_err))
             ax[2].set_title(f'x_err: [{x_err_stats.min:.2f}, {x_err_stats.max:.2f}], mse: {np.mean(x_err):.2f}')
+            for i in range(len(ax)): ax[i].grid(False)
             plt.show()
             del fig, ax
 
