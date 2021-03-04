@@ -10,6 +10,7 @@ import pytorch_lightning as pl
 from pathlib import Path
 from torchvision import transforms
 from skimage import io, transform
+from sklearn.model_selection import train_test_split
 from utils import tools
 from typing import Optional, Generic
 
@@ -18,8 +19,8 @@ ROOT_DATA_PATH = '/home/brahste/Datasets/LunarAnalogue/images-screened'
 
 
 class LunarAnalogueDataset(torch.utils.data.Dataset):
-    '''Creating a map style dataset of the lunar analogue terrain'''
-
+    """Map style dataset of the lunar analogue terrain"""
+    # TODO: Consider doing data augmentation to increase the number of training samples
     def __init__(
             self,
             data_config: dict,
@@ -53,53 +54,112 @@ class LunarAnalogueDataset(torch.utils.data.Dataset):
 
         return image
 
+    def get_label(self, idx: int):
+
+        if 'typical/' in str(self._list_of_image_paths[idx]):
+            return 0
+        elif 'novel/' in str(self._list_of_image_paths[idx]):
+            return 1
+        else:
+            raise ValueError('Cannot find typical or novel in file path')
+
 
 class LunarAnalogueDataGenerator:
-    def __init__(self, config: dict):
+    """
+    For use with sklearn models and other CPU-based algorithms
+    """
+    def __init__(self, config: dict, stage):
+        print(f'Loading {self.__class__.__name__}\n------')
+
         # Unpack configuration
         self._config = config
-        self._root_data_path = self._config['root_data_path']
         self._batch_size = self._config['batch_size']
-        self._train_fraction = self._config['train_fraction']
-        self._val_fraction = 1 - self._config['train_fraction']
-
+        # Declare preprocessing pipeline
         self._transforms = tools.PreprocessingPipeline()
 
-    def create_generator(self, stage: str):
-        
-        if stage == 'fit' or stage == 'train':
-            dataset = LunarAnalogueDataset(
+        if stage == 'train' or stage == 'val':
+            self._train_fraction = self._config['train_fraction']
+            self._val_fraction = 1 - self._config['train_fraction']
+
+            # Instantiate training dataset
+            self._trainval_set = LunarAnalogueDataset(
                 self._config,
                 train=True,
                 transforms=self._transforms
             )
-        
-        if stage == 'test':
-            dataset = LunarAnalogueDataset(
+
+            # Set training and validation split
+            train_size = np.floor(len(self._trainval_set)*self._train_fraction).astype(int)
+            val_size = np.floor(len(self._trainval_set)*self._val_fraction).astype(int)
+
+            self._train_idxs, self._val_idxs = train_test_split(
+                np.arange(len(self._trainval_set), dtype=int),
+                test_size=val_size,
+                train_size=train_size,
+                random_state=42,
+                shuffle=False
+            )
+            print(f'Training samples: {train_size}\nValidation samples: {val_size}\n')
+
+        elif stage == 'test':
+            # Setup testing data as well
+            self._test_set = LunarAnalogueDataset(
                 self._config,
                 train=False,
                 transforms=self._transforms
             )
+            print(f'Testing samples: {len(self._test_set)}\n')
 
-        batch_out = np.empty( (*(self._batch_size,), *dataset[0].shape) )
+        else:
+            raise ValueError('Only accepts the following stages: \'train\', \'val\', \'test\'.')
+
+    def trainval_generator(self, stage: str):
+        assert hasattr(self, '_trainval_set'), 'Need to instantiate datagenerator with stage=\'train\'.'
+
+        if stage == 'train':
+            idxs = self._train_idxs
+        elif stage == 'val':
+            idxs = self._val_idxs
+        else:
+            raise ValueError('Generator only accepts \'train\' and \'val\' stages.')
+
+        batch_out = np.empty( (self._batch_size, *self._trainval_set[0].shape) )
         batch_nb = 0
 
-        while batch_nb <= (len(dataset) // self._batch_size):
-            for i in range(self._batch_size):
-                batch_out[i] = dataset[batch_nb * self._batch_size + i]
+        while batch_nb < (len(idxs) // self._batch_size):
+            # Use sliding batch number approach to select which data to generate
+            for i, idx in enumerate(idxs[batch_nb * self._batch_size : (batch_nb + 1) * self._batch_size]):
+                batch_out[i] = self._trainval_set[idx]
 
             batch_nb += 1
             yield batch_out
-            # Note that to use this generator you have to iterate over
-            # the output as it's not all read into memory at once.
+
+    def test_generator(self):
+        assert hasattr(self, '_test_set'), 'Need to instantiate datagenerator with stage=\'test\'.'
+
+        batch_out = np.empty( (self._batch_size, *self._test_set[0].shape) )
+        label_out = np.empty( (self._batch_size, ) )
+        batch_nb = 0
+
+        while batch_nb < (len(self._test_set) // self._batch_size):
+            for i in range(self._batch_size):
+                # Use sliding batch number approach to select which data to generate
+                batch_out[i] = self._test_set[batch_nb * self._batch_size + i]
+                label_out[i] = self._test_set.get_label(batch_nb * self._batch_size + i)
+
+            batch_nb += 1
+            yield batch_out, label_out
+
 
 class LunarAnalogueDataModule(pl.core.datamodule.LightningDataModule):
+    """
+    For use with Pytorch models only
+    """
     def __init__(self, config: dict):
         super(LunarAnalogueDataModule, self).__init__()
 
         # Unpack configuration
         self._config = config
-        self._root_data_path = self._config['root_data_path']
         self._batch_size = self._config['batch_size']
         self._train_fraction = self._config['train_fraction']
         self._val_fraction = 1 - self._config['train_fraction']
@@ -139,7 +199,7 @@ class LunarAnalogueDataModule(pl.core.datamodule.LightningDataModule):
                 train=False,
                 transforms=self._transforms
             )
-        return
+        return self
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
@@ -167,23 +227,4 @@ class LunarAnalogueDataModule(pl.core.datamodule.LightningDataModule):
 
 
 if __name__ == '__main__':
-    # dataset = LunarAnalogueDataset('/home/brahste/Datasets/LunarAnalogue/images-screened')
-    # print(len(dataset))
-    # print(type(dataset[44]))
-    # print(dataset[44].shape)
-    # # plt.imshow(dataset[550]); plt.show();
-
-
-    dataloader = LunarAnalogueDataModule().train_dataloader()
-
-    print(dataloader)
-    print(type(dataloader))
-    print(dir(dataloader))
-
-    train1 = next(iter(dataloader))
-    print(train1.shape)
-
-    # for i, batch in enumerate(dataloader):
-    #     print(batch.shape)
-    #     # plt.imshow(image); plt.show()
-    #     if i > 10 : break
+    pass
