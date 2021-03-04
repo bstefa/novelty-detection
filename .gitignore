@@ -1,0 +1,10 @@
+**/.spyproject/
+**/__pycache__/
+**/logs/
+**/.idea/
+**/.ipynb_checkpoints/
+**/saved-models/
+
+.vscode
+
+*.swp
