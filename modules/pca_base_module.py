@@ -1,7 +1,7 @@
 """
 Defines base module for PCA experiments.
-Class must be instantiated with an sklearn model that has the following methods: .partial_fit, .transform,
-.inverse_transform
+Class must be instantiated with an sklearn model that has the following 
+methods: .partial_fit, .transform, .inverse_transform
 """
 import numpy as np
 
@@ -30,14 +30,14 @@ class PCABaseModule(object):
             self.model.partial_fit(self._flatten_batch(batch_tr_in))
 
             batch_novelty_scores = []
-            for batch_vl_nb, batch_vl_in in enumerate(self.dg.trainval_generator('val')):
+            for batch_vl_in in self.dg.trainval_generator('val'):
 
                 batch_vl_rd = self.model.transform(self._flatten_batch(batch_vl_in))
                 batch_vl_rc = self.model.inverse_transform(batch_vl_rd).reshape(batch_vl_in.shape)
 
                 # Run validation on batch
                 for x_nb, (x_rc, x_in) in enumerate(zip(batch_vl_rc, batch_vl_in)):
-                    assert len(x_rc.shape) == 3 and len(x_hat.shape), 'Only accepts H,W,C image-data'
+                    assert len(x_rc.shape) == 3, 'Only accepts H,W,C image-data'
                     image_novelty_score = losses.squared_error(
                         x_in,
                         x_rc,
@@ -86,22 +86,6 @@ class PCABaseModule(object):
 
         # TODO: This is an ideal place to return a BatchStatistics object in the future
         return novelty_scores, novelty_labels
-
-    @property
-    def components(self):
-        return self.model.components_
-
-    @property
-    def explained_variance(self):
-        return self.model.explained_variance_
-
-    @property
-    def explained_variance_ratio(self):
-        return self.model.explained_variance_ratio_
-
-    @property
-    def meanvar(self):
-        return self.model.meanvar_
 
     def _flatten_batch(self, batch_in):
         # Keep the batch dimension, take product of other three dimensions
