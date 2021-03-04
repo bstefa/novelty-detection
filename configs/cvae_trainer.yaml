@@ -20,15 +20,15 @@ batch_size: 32
 
   # [experiment_name, optional] name used when logging the experiment, version number is
   # automatically appended; if 'null' then the name of the model class will be used. ***INCOMPLETE
-experiment_name: 'RCAE'
+experiment_name: 'CVAE'
 
   # [log_directory, optoinal] directory to save logs to; if 'null' then defaults to
   # '.region_detector/logs' ***INCOMPLETE
-log_directory: '.region_detector/logs'
+log_directory: './logs'
 
   # [learning_rate, optional] learning rate used during training; if 'null' then the
   # learning rate is set automatically set during training with rate schedulers. INCOMPLETE
-learning_rate: 0.003
+learning_rate: 0.005
 
   # Download directory for toy datasets
 dataset_download_dir: '/home/fenrir/Documents/novelty-detection/downloads'
