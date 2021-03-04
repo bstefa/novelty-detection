@@ -10,14 +10,20 @@ class MNISTDataModule(pl.LightningDataModule):
     def __init__(
             self,
             config: dict,
-            transforms: Optional[transforms.Compose] = None
+            data_transforms: Optional[transforms.Compose]=None
         ):
 
         super(MNISTDataModule, self).__init__()
 
         self.download_dir = config['dataset_download_dir']
         self.batch_size = config['batch_size']
-        self.transforms = transforms
+
+        if data_transforms is not None:
+            self.data_transforms = data_transforms
+        else:
+            self.data_transforms = transforms.Compose([
+                transforms.ToTensor(),
+            ])
 
         if os.path.isdir(self.download_dir) == False:
             print("Creating download directory")
@@ -37,13 +43,13 @@ class MNISTDataModule(pl.LightningDataModule):
 
         data = datasets.MNIST(self.download_dir,
                               train=True,
-                              transform=self.transforms)
+                              transform=self.data_transforms)
         
         self.train_data, self.val_data = random_split(data, [55000, 5000])
   
         self.test_data = datasets.MNIST(self.download_dir, 
                                         train=False, 
-                                        transform=self.transforms)
+                                        transform=self.data_transforms)
 
     def train_dataloader(self):
         return DataLoader(
@@ -62,6 +68,19 @@ class MNISTDataModule(pl.LightningDataModule):
             self.test_data,
             batch_size=self.batch_size,
             num_workers=4)
+
+    @property
+    def len_train_data(self):
+        return len(self.train_data)
+
+    @property
+    def len_val_data(self):
+        return len(self.val_data)
+
+    @property
+    def len_test_data(self):
+        return len(self.test_data)
+    
 
 if __name__ == '__main__':
 

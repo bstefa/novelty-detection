@@ -12,12 +12,12 @@ class CVAEBaseModule(pl.LightningModule):
             self,
             data_module,
             model,
-            params: dict):
+            hparams: dict):
         super(CVAEBaseModule, self).__init__()
 
         self.dm = data_module
         self.model = model
-        self.params = params
+        self.hparams = hparams
         self.curr_device = None
 
     def forward(self, x: Tensor, **kwargs) -> Tensor:
@@ -30,7 +30,7 @@ class CVAEBaseModule(pl.LightningModule):
 
         results = self.forward(images, labels=labels)
         train_loss = self.model.loss_function(*results,
-                                            M_N = self.params['batch_size']/ self.num_val_imgs,
+                                            M_N = self.hparams['batch_size']/self.dm.len_train_data,
                                             optimizer_idx = optimizer_idx,
                                             batch_idx = batch_idx)
         
@@ -44,7 +44,7 @@ class CVAEBaseModule(pl.LightningModule):
 
         results = self.forward(real_img, labels = labels)
         val_loss = self.model.loss_function(*results,
-                                            M_N = self.params['batch_size']/ self.num_val_imgs,
+                                            M_N = self.hparams['batch_size']/self.dm.len_val_data,
                                             optimizer_idx = optimizer_idx,
                                             batch_idx = batch_idx)
 
@@ -101,8 +101,7 @@ class CVAEBaseModule(pl.LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.model.parameters(),
-                               lr=self.params['LR'],
-                               weight_decay=self.params['weight_decay'])
+                               lr=self.hparams['learning_rate'])
 
 
 
