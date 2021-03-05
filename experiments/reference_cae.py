@@ -1,3 +1,14 @@
+"""
+Script used to run novelty detection experiment using reference Convolutional
+Autoencoder (See ISAIRAS 2020 paper for details). This script trains and
+serializes the model for future evaluation.
+
+Uses:
+    Module: CAEBaseModule
+    Model: ReferenceCAE
+    Dataset: LunarAnalogueDataGenerator
+    Configuration: reference_cae.yaml
+"""
 import pytorch_lightning as pl
 
 from utils import tools
@@ -5,10 +16,11 @@ from modules.cae_base_module import CAEBaseModule
 from models.reference_cae import ReferenceCAE
 from datasets.lunar_analogue import LunarAnalogueDataModule
 
+
 def main():
     # Set defaults
-    DEFAULT_CONFIG_FILE = 'configs/trainer_cae_reference.yaml'
-    config = tools.config_from_command_line(DEFAULT_CONFIG_FILE)
+    default_config_file = 'configs/reference_cae.yaml'
+    config = tools.config_from_command_line(default_config_file)
 
     # Initialize datamodule
     datamodule = LunarAnalogueDataModule(config)
@@ -42,15 +54,15 @@ def main():
         ]
     )
 
-    lr_finder = trainer.tuner.lr_find(module)
-    module.hparams.learning_rate = lr_finder.suggestion()
-    print('Learning rate: ', module.hparams.learning_rate)
-    fig = lr_finder.plot(suggest=True)
-    fig.show()
-
-    tuner = pl.tuner.tuning.Tuner(trainer)
-    module.hparams.batch_size = tuner.scale_batch_size(module)
-    print('Batch size: ', module.hparams.batch_size)
+    # lr_finder = trainer.tuner.lr_find(module)
+    # module.hparams.learning_rate = lr_finder.suggestion()
+    # print('Learning rate: ', module.hparams.learning_rate)
+    # fig = lr_finder.plot(suggest=True)
+    # fig.show()
+    #
+    # tuner = pl.tuner.tuning.Tuner(trainer)
+    # module.hparams.batch_size = tuner.scale_batch_size(module)
+    # print('Batch size: ', module.hparams.batch_size)
 
     # Train the model
     trainer.fit(module)
