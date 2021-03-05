@@ -6,19 +6,21 @@ import torchvision
 
 from utils.tools import *
 
+
 class CAEBaseModule(pl.LightningModule):
-    '''
+    """
     The lighting module helps enforce best practices
     by keeping your code modular and abstracting the
     'engineering code' or boilerplate that new model
     require.
-    '''
+    """
+
     def __init__(
             self,
             datamodule,
             model,
             params: dict
-        ):
+    ):
         super(CAEBaseModule, self).__init__()
 
         # Use datamodule and model
@@ -30,7 +32,7 @@ class CAEBaseModule(pl.LightningModule):
 
         # Return a callable torch.nn.XLoss object
         # e.g. self._loss_function = self._handle_loss_function(params['loss_function'])
-        self._loss_function = nn.MSELoss()
+        self.loss_function = nn.MSELoss()
 
     def forward(self, x):
         return self.model.forward(x)
@@ -41,6 +43,9 @@ class CAEBaseModule(pl.LightningModule):
     def val_dataloader(self):
         return self.dm.val_dataloader()
 
+    def test_dataloader(self):
+        return self.dm.test_dataloader()
+
     def configure_optimizers(self):
         return torch.optim.Adam(
             self.model.parameters(),
@@ -50,24 +55,23 @@ class CAEBaseModule(pl.LightningModule):
     def on_train_start(self):
         print(f'Initializing with parameters:\n{self.hparams}\n')
 
-
     def on_epoch_start(self):
         random_integers = torch.randint(
-            low=0, 
+            low=0,
             high=self.hparams.num_train_batches,
             size=(3,)
         )
         self._random_train_steps = self.global_step + random_integers
         print(f'\nLogging images from batches: {self._random_train_steps.tolist()}\n')
 
-    def training_step(self, x_in, batch_idx):
+    def training_step(self, x_in, batch_nb):
 
-        x_out = self(x_in)
-        loss = self._loss_function(x_out, x_in)
+        x_rc = self(x_in)
+        loss = self.loss_function(x_rc, x_in)
 
         images = {
-            'x_in': x_in.detach(), # Tensor
-            'x_out': x_out.detach() # Tensor
+            'x_in': x_in.detach(),  # Tensor
+            'x_rc': x_rc.detach()  # Tensor
         }
         result = {
             'loss': loss
@@ -78,12 +82,12 @@ class CAEBaseModule(pl.LightningModule):
             self._handle_image_logging(images, session='train')
 
         self.log_dict(result)
-        return result # The returned object must contain a 'loss' key
+        return result  # The returned object must contain a 'loss' key
 
-    def validation_step(self, x_in, batch_idx):
+    def validation_step(self, x_in, batch_nb):
 
-        x_out = self(x_in)
-        loss = self._loss_function(x_out, x_in)
+        x_rc = self(x_in)
+        loss = self.loss_function(x_rc, x_in)
 
         result = {
             'val_loss': loss
@@ -92,59 +96,65 @@ class CAEBaseModule(pl.LightningModule):
         self.log_dict(result)
         return result
 
-    def _handle_image_logging(self, images: dict, session: str='train'):
+    def test_step(self, x_in, batch_nb):
+
+        x_rc = self(x_in)
+        loss = self.loss_function(x_rc)
+
+        print(loss)
+
+    def _handle_image_logging(self, images: dict, session: str = 'train'):
 
         if self.logger.version is None:
             return
         else:
             compute = {
                 'x_in_01': unstandardize_batch(images['x_in']),
-                'x_out_01': unstandardize_batch(images['x_out']),
-                'error_map': get_error_map(images['x_in'], images['x_out'])
+                'x_rc_01': unstandardize_batch(images['x_rc']),
+                'error_map': get_error_map(images['x_in'], images['x_rc'])
             }
 
             self._log_to_tensorboard(images, compute)
             self._log_images(compute)
         return
 
-
     def _log_to_tensorboard(self, result: dict, compute: dict):
         self.logger.experiment.add_image(
-            f'x_in-{self.global_step}', 
-            result['x_in'], 
-            global_step=self.global_step, 
+            f'x_in-{self.global_step}',
+            result['x_in'],
+            global_step=self.global_step,
             dataformats='NCHW'
         )
         self.logger.experiment.add_image(
-            f'x_in_unstandardized-{self.global_step}', 
-            compute['x_in_01'], 
-            global_step=self.global_step, 
+            f'x_in_unstandardized-{self.global_step}',
+            compute['x_in_01'],
+            global_step=self.global_step,
             dataformats='NCHW'
         )
         self.logger.experiment.add_image(
-            f'x_out-{self.global_step}', 
-            result['x_out'], 
-            global_step=self.global_step, 
+            f'x_rc-{self.global_step}',
+            result['x_rc'],
+            global_step=self.global_step,
             dataformats='NCHW'
         )
         self.logger.experiment.add_image(
-            f'x_out_unstandardized-{self.global_step}', 
-            compute['x_out_01'], 
-            global_step=self.global_step, 
+            f'x_rc_unstandardized-{self.global_step}',
+            compute['x_rc_01'],
+            global_step=self.global_step,
             dataformats='NCHW'
         )
         self.logger.experiment.add_image(
-            f'metric_squared_error-{self.global_step}', 
-            compute['error_map'], 
-            global_step=self.global_step, 
+            f'metric_squared_error-{self.global_step}',
+            compute['error_map'],
+            global_step=self.global_step,
             dataformats='NCHW'
         )
-    
+
     def _log_images(self, compute: dict):
 
         logger_save_path = os.path.join(
-            self.logger.save_dir, 
-            self.logger.name, 
+            self.logger.save_dir,
+            self.logger.name,
             f'version_{self.logger.version}'
         )
 
@@ -154,10 +164,10 @@ class CAEBaseModule(pl.LightningModule):
         rint = torch.randint(0, len(compute['x_in_01']), size=())
         for key in compute:
             torchvision.utils.save_image(
-                compute[key][rint], 
+                compute[key][rint],
                 os.path.join(
                     logger_save_path,
                     'images',
-                    f'{self.current_epoch}-{self.global_step-(self.hparams.num_train_batches*self.current_epoch)}-{key}.png'
+                    f'{self.current_epoch}-{self.global_step - (self.hparams.num_train_batches * self.current_epoch)}-{key}.png'
                 )
             )
