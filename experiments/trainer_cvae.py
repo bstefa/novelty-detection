@@ -19,6 +19,7 @@ def main():
     # Initialize datamodule
     print("Initializing datamodule..")
     datamodule = MNISTDataModule(config)
+    datamodule.prepare_data()
     datamodule.setup()
 
     # Initialize model
@@ -47,6 +48,7 @@ def main():
         save_dir=config['log_directory'],
         name=config['experiment_name'],
         debug=False,
+        version=1.0,
         create_git_tag=False,
     )
     # Initialize the Trainer object
@@ -54,7 +56,8 @@ def main():
     trainer = pl.Trainer(
         gpus=1,
         logger=tt_logger,
-        max_epochs=10,
+        max_epochs=config['max_epochs'],
+        check_val_every_n_epoch=1,
         # auto_lr_find=(True if config['learning_rate'] is None else False),
         callbacks=[
             pl.callbacks.early_stopping.EarlyStopping(monitor='loss', patience=10)
@@ -76,6 +79,8 @@ def main():
     # Train the model
     print("Training model")
     trainer.fit(module)
+
+    module.sample_images()
 
 if __name__ == '__main__':
     main()
