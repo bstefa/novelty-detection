@@ -30,6 +30,9 @@ log_directory: './logs'
   # learning rate is set automatically set during training with rate schedulers. INCOMPLETE
 learning_rate: 0.005
 
+  # Maximum number of epochs
+max_epochs: 10
+
   # Download directory for toy datasets
-dataset_download_dir: '/home/fenrir/Documents/novelty-detection/downloads'
+dataset_download_dir: '/home/sleipnir/Documents/novelty-detection/downloads'
 
