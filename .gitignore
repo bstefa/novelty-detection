@@ -1,3 +1,20 @@
+# Repo specific exlcudes
+.spyproject/
+__pycache__/
+lightning_logs/
+.idea/
+saved-models/
+logs/
+lightning_logs/
+
+*.ckpt
+*.swp
+*.orig
+
+
+# GENERIC EXCLUDES
+
+# Python by-products
 __pycache__/
 *.py[cod]
 *$py.class
@@ -66,6 +83,9 @@ instance/
 
 # Scrapy stuff:
 .scrapy
+
+# Visual Studio code configs
+.vscode
 
 # Sphinx documentation
 docs/_build/
@@ -136,5 +156,3 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-logs/
-lightning_logs/
