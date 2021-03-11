@@ -1,10 +1,14 @@
+"""
+A mix and match of useful tools for the repo
+"""
 import cv2 as cv
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn.functional as F
 import sys
 import yaml
+
+from pathlib import Path
 
 
 def config_from_command_line(default_config: str):
@@ -34,6 +38,14 @@ def config_from_file(config_file: str):
         y = yaml.full_load(f)
 
 
+def save_dictionary_to_current_version(log_dir: str, name: str, filename: str, dictionary: dict):
+    save_path = Path(log_dir)/name
+    save_path = sorted(save_path.glob('v*'))[-1]
+
+    with open(str(save_path/filename), 'w') as f:
+        yaml.dump(dictionary, f)
+
+
 def chw2hwc(x):
     if isinstance(x, torch.Tensor):
         return x.permute(1, 2, 0)
@@ -49,29 +61,29 @@ def unstandardize_batch(batch_in: torch.Tensor, tol: float = 0.01):
     if isinstance(batch_in, torch.Tensor):
         # Clone batch and detach from the computational graph
         batch = batch_in.detach().clone().to(device='cpu')
-    
+
         # Convert pixel range for each image in the batch
         for b in range(len(batch)):
             extremum = torch.max(torch.abs(batch[b]))
             batch[b] = (batch[b] / (2 * extremum)) + 0.5
-    
+
         # Some basic assertions to ensure correct range manipulation
         assert torch.max(batch) < (1.0 + tol), f'The maximum pixel intensity ({torch.max(batch)}) is out of range'
         assert torch.min(batch) > (0.0 - tol), f'The minimum pixel intensity ({torch.min(batch)}) is out of range'
-    
+
     elif isinstance(batch_in, np.ndarray):
         # Clone batch and detach from the computational graph
         batch = batch_in.copy()
-    
+
         # Convert pixel range for each image in the batch
         for b in range(len(batch)):
             extremum = np.amax(np.abs(batch[b]))
             batch[b] = (batch[b] / (2 * extremum)) + 0.5
-    
+
         # Some basic assertions to ensure correct range manipulation
         assert np.amax(batch) < (1.0 + tol), f'The maximum pixel intensity ({torch.max(batch)}) is out of range'
         assert np.amin(batch) > (0.0 - tol), f'The minimum pixel intensity ({torch.min(batch)}) is out of range'
-        
+
     return batch
 
 
@@ -100,11 +112,13 @@ def get_error_map(x_input, x_output, tol: float = 0.001):
         x_err = x_input - x_output
         return x_err / np.max(np.abs(x_err))
 
+
 def gaussian_window(mean, std):
-    x = np.linspace(mean - 3.5*std, mean + 3.5*std, 100)
-    coefficient = (1 / std*(2*np.pi)**(-1/2) )
-    argument = (-1/2)*( ((x - mean)/std)**2 )
+    x = np.linspace(mean - 3.5 * std, mean + 3.5 * std, 100)
+    coefficient = (1 / std * (2 * np.pi) ** (-1 / 2))
+    argument = (-1 / 2) * (((x - mean) / std) ** 2)
     return np.exp(argument)
+
 
 # INCOMPLETE: DO NOT USE
 class BatchStatistics(object):
@@ -112,13 +126,13 @@ class BatchStatistics(object):
     Evaluates statistics on input batch, accessible as member functions
     for easy, on the fly access.
     '''
+
     def __init__(self, batch_in):
         if isinstance(batch_in, torch.Tensor):
             # Detach tensor from comp graph, clone to cpu, convert to numpy
             batch_in = batch_in.detach().clone().to(device='cpu').numpy()
         assert isinstance(batch_in, np.ndarray), 'Batch wasn\'t successfully converted to numpy'
         self.batch_in = batch_in
-
 
     # The main purpose of any decorator is to change your class methods or
     # attributes in such a way so that the user of your class no need to
@@ -147,13 +161,18 @@ class BatchStatistics(object):
     def std(self):
         return np.std(self.batch_in)
 
-class PreprocessingPipeline:
-    '''
-    Sets the contrast (e.g. standard deviation) of pixels
-    in an image equal to a specified value
 
+class PreprocessingPipeline:
+    """
+    Standard image preprocessing pipeline for Lunar Analogue data.
+    Cascades processing steps:
+        1) resize
+        2) histogram equalization
+        3) Gaussian blurring
+        4) channelwise standardization
     See the slides from: https://cedar.buffalo.edu/~srihari/CSE676/12.2%20Computer%20Vision.pdf
-    '''
+    for more information on the steps used here.
+    """
 
     def __init__(self):
         return
@@ -161,19 +180,16 @@ class PreprocessingPipeline:
     def __call__(self, image: np.ndarray) -> np.ndarray:
         n_channels = image.shape[-1]
 
-        # Cascade processing steps: 
-        # 1) resize
-        # 2) histogram equalization
-        # 3) channelwise standardization
-        image = cv.resize(image, (512, 512), interpolation=cv.INTER_AREA)
+        image = cv.resize(image, (256, 256), interpolation=cv.INTER_AREA)
 
-        # To conduct histogram equalization you have to operate on the intesity
+        # To conduct histogram equalization you have to operate on the intensity
         # values of the image, so a different color space is required
         image = cv.cvtColor(image, cv.COLOR_RGB2YCrCb)
         image[..., 0] = cv.equalizeHist(image[..., 0])
         image = cv.cvtColor(image, cv.COLOR_YCrCb2RGB)
-        # ! Consider experimenting with blurring, may improve system performance
-        ### image = cv.GaussianBlur(image, (3, 3), 1)
+
+        # Minor Gaussian blurring
+        image = cv.GaussianBlur(image, (3, 3), 0.5)
 
         # Convert image dtype to float
         image = np.float32(image)
@@ -186,7 +202,6 @@ class PreprocessingPipeline:
 
 
 if __name__ == '__main__':
-
     from datasets.lunar_analogue import LunarAnalogueDataGenerator
 
     config = config_from_command_line('configs/incremental_pca.yaml')
@@ -197,7 +212,6 @@ if __name__ == '__main__':
 
     bstat_obj = BatchStatistics(batch)
     print(bstat_obj.mean)
-
 
     #
     # fig = plt.figure()

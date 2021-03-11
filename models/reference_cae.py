@@ -1,95 +1,74 @@
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
+
+
+class EncodingBlock(nn.Module):
+    def __init__(
+            self, in_chans: int, out_chans: int,
+            kernel_size: int=5, padding: int=2, drop_prob: float=0.1, leak: float=0.1,
+            **kwargs
+    ):
+        super(EncodingBlock, self).__init__()
+        self.conv = nn.Conv2d(in_chans, out_chans, kernel_size=kernel_size, padding=padding, **kwargs)
+        self.activation = nn.LeakyReLU(negative_slope=leak)
+        self.drop = nn.Dropout2d(p=drop_prob)
+        self.bn = nn.BatchNorm2d(out_chans)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.activation(x)
+        x = self.drop(x)
+        x = self.bn(x)
+        return x
+
+
+class DecodingBlock(nn.Module):
+    def __init__(
+            self, in_chans: int, out_chans: int,
+            kernel_size: int=5, padding: int=2, drop_prob: float=0.1, leak: float=0.1,
+            **kwargs
+    ):
+        super(DecodingBlock, self).__init__()
+        self.transconv = nn.ConvTranspose2d(in_chans, out_chans, kernel_size=kernel_size, padding=padding, **kwargs)
+        self.activation = nn.LeakyReLU(leak)
+        self.drop = nn.Dropout2d(drop_prob)
+        self.bn = nn.BatchNorm2d(out_chans)
+
+    def forward(self, x):
+        x = self.transconv(x)
+        x = self.activation(x)
+        x = self.drop(x)
+        x = self.bn(x)
+        return x
 
 
 class ReferenceCAE(nn.Module):
-    def __init__(
-            self,
-            params: dict
-    ):
+    def __init__(self):
         super(ReferenceCAE, self).__init__()
 
         # Encoding layers
-        self.conv1_1 = nn.Conv2d(3, 24, 5, padding=2)
-        self.conv1_1_bn = nn.BatchNorm2d(24)
-        self.conv1_2 = nn.Conv2d(24, 48, 5, padding=2)
-        self.conv1_2_bn = nn.BatchNorm2d(48)
-        self.conv2_1 = nn.Conv2d(48, 48, 5, padding=2, stride=2)
-        self.conv2_1_bn = nn.BatchNorm2d(48)
-        self.conv2_2 = nn.Conv2d(48, 24, 5, padding=2)
-        self.conv2_2_bn = nn.BatchNorm2d(24)
-        self.conv2_3 = nn.Conv2d(24, 16, 5, padding=2)
-        self.conv2_3_bn = nn.BatchNorm2d(16)
-        self.conv3_1 = nn.Conv2d(16, 8, 5, padding=2, stride=2)
-        self.conv3_1_bn = nn.BatchNorm2d(8)
-        self.conv3_2 = nn.Conv2d(8, 3, 5, padding=2)
+        self.encoder = nn.Sequential(
+            EncodingBlock(3, 24),
+            EncodingBlock(24, 48),
+            EncodingBlock(48, 48, stride=2),
+            EncodingBlock(48, 24),
+            EncodingBlock(24, 16),
+            EncodingBlock(16, 8, stride=2),
+            nn.Conv2d(8, 3, kernel_size=5, padding=2)  # Final latent space layer
+        )
 
         # Decoding layers
-        self.transconv1_1 = nn.ConvTranspose2d(3, 8, 5, padding=2)
-        self.transconv1_1_bn = nn.BatchNorm2d(8)
-        self.transconv1_2 = nn.ConvTranspose2d(8, 16, 5, padding=2, stride=2, output_padding=1)
-        self.transconv1_2_bn = nn.BatchNorm2d(16)
-        self.transconv2_1 = nn.ConvTranspose2d(16, 24, 5, padding=2)
-        self.transconv2_1_bn = nn.BatchNorm2d(24)
-        self.transconv2_2 = nn.ConvTranspose2d(24, 48, 5, padding=2)
-        self.transconv2_2_bn = nn.BatchNorm2d(48)
-        self.transconv2_3 = nn.ConvTranspose2d(48, 48, 5, padding=2, stride=2, output_padding=1)
-        self.transconv2_3_bn = nn.BatchNorm2d(48)
-        self.transconv3_1 = nn.ConvTranspose2d(48, 24, 5, padding=2)
-        self.transconv3_1_bn = nn.BatchNorm2d(24)
-        self.transconv3_2 = nn.ConvTranspose2d(24, 3, 5, padding=2)
-
-    def encode(self, x):
-        # print('e-in', x.size())
-        x = F.leaky_relu(self.conv1_1(x), negative_slope=0.1)
-        x = self.conv1_1_bn(x)
-        # print(x.size())
-        x = F.leaky_relu(self.conv1_2(x), negative_slope=0.1)
-        x = self.conv1_2_bn(x)
-        # print(x.size())
-        x = F.leaky_relu(self.conv2_1(x), negative_slope=0.1)
-        x = self.conv2_1_bn(x)
-        # print(x.size())
-        x = F.leaky_relu(self.conv2_2(x), negative_slope=0.1)
-        x = self.conv2_2_bn(x)
-        # print(x.size())
-        x = F.leaky_relu(self.conv2_3(x), negative_slope=0.1)
-        x = self.conv2_3_bn(x)
-        # print(x.size())
-        x = F.leaky_relu(self.conv3_1(x), negative_slope=0.1)
-        x = self.conv3_1_bn(x)
-        # print(x.size())
-        x = F.leaky_relu(self.conv3_2(x), negative_slope=0.1)
-        # print('e-out', torch.max(x), torch.min(x), x.size())
-        return x
-
-    def decode(self, x):
-        # print('d-in', torch.max(x), torch.min(x), x.size())
-        x = F.leaky_relu(self.transconv1_1(x), negative_slope=0.1)
-        x = self.transconv1_1_bn(x)
-        # print(x.size())
-        x = F.leaky_relu(self.transconv1_2(x), negative_slope=0.1)
-        x = self.transconv1_2_bn(x)
-        # print(x.size())
-        x = F.leaky_relu(self.transconv2_1(x), negative_slope=0.1)
-        x = self.transconv2_1_bn(x)
-        # print(x.size())
-        x = F.leaky_relu(self.transconv2_2(x), negative_slope=0.1)
-        x = self.transconv2_2_bn(x)
-        # print(x.size())
-        x = F.leaky_relu(self.transconv2_3(x), negative_slope=0.1)
-        x = self.transconv2_3_bn(x)
-        # print(x.size())
-        x = F.leaky_relu(self.transconv3_1(x), negative_slope=0.1)
-        x = self.transconv3_1_bn(x)
-        # print(x.size())
-        x = F.leaky_relu(self.transconv3_2(x), negative_slope=0.1)
-        # print('d-out', torch.max(x), torch.min(x), x.size())
-        return x
+        self.decoder = nn.Sequential(
+            DecodingBlock(3, 8),
+            DecodingBlock(8, 16, stride=2, output_padding=1),
+            DecodingBlock(16, 24),
+            DecodingBlock(24, 48),
+            DecodingBlock(48, 48, stride=2, output_padding=1),
+            DecodingBlock(48, 24),
+            nn.Conv2d(24, 3, kernel_size=5, padding=2)  # Same as input dimension
+        )
 
     def forward(self, x):
         # Simple encoding into latent representation and decoding back to input space
-        x = self.encode(x)
-        x = self.decode(x)
+        x = self.encoder(x)
+        x = self.decoder(x)
         return x

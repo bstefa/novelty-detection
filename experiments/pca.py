@@ -21,9 +21,14 @@ def main():
     default_config_file = 'configs/incremental_pca.yaml'
     # Optionally accepts configuration file specified on command line
     config = tools.config_from_command_line(default_config_file)
+    # Unpack configuration
+    experiment_parameters = config['experiment-parameters']
+    data_parameters = config['data-parameters']
+    module_parameters = config['module-parameters']
 
     # Initialize datagenerator
-    datagenerator = LunarAnalogueDataGenerator(config, stage='train')
+    datagenerator = LunarAnalogueDataGenerator(**data_parameters)
+    datagenerator.setup('train')
 
     # Initialize model. With n_component=None the number of features will autoscale to the batch size
     model = IncrementalPCA(n_components=None)
