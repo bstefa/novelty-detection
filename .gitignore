@@ -1,11 +1,16 @@
+# Directories to exclude
 **/.spyproject/
 **/__pycache__/
-**/logs/
+**/lightning_logs/
 **/.idea/
 **/.ipynb_checkpoints/
 **/saved-models/
+**/logs/
 
+# Hidden files to exclude
 .vscode
 
+# File extensions to exclude
+*.ckpt
 *.swp
 *.orig
