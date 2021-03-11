@@ -53,7 +53,8 @@ class ReferenceCAE(nn.Module):
             EncodingBlock(48, 24),
             EncodingBlock(24, 16),
             EncodingBlock(16, 8, stride=2),
-            nn.Conv2d(8, 3, kernel_size=5, padding=2)  # Final latent space layer
+            nn.Conv2d(8, 3, kernel_size=5, padding=2),  # Final latent space layer
+            nn.Linear(3, 3)
         )
 
         # Decoding layers
@@ -64,7 +65,8 @@ class ReferenceCAE(nn.Module):
             DecodingBlock(24, 48),
             DecodingBlock(48, 48, stride=2, output_padding=1),
             DecodingBlock(48, 24),
-            nn.Conv2d(24, 3, kernel_size=5, padding=2)  # Same as input dimension
+            nn.Conv2d(24, 3, kernel_size=5, padding=2),  # Same as input dimension
+            nn.Tanh()
         )
 
     def forward(self, x):
