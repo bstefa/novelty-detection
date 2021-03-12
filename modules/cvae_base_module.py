@@ -7,61 +7,74 @@ import torchvision
 
 from utils.dtypes import *
 
+
 class CVAEBaseModule(pl.LightningModule):
     def __init__(
             self,
-            data_module,
-            model,
-            hparams: dict):
+            model: nn.Module,
+            train_size: int,
+            val_size: int,
+            learning_rate: float = 0.001,
+            batch_size: int = 8):
         super(CVAEBaseModule, self).__init__()
 
-        self.dm = data_module
         self.model = model
-        self.hparams = hparams
-        self.curr_device = None
+        self.lr = learning_rate if learning_rate != 'auto' else 0.001
+        self._train_size = train_size
+        self._val_size = val_size
+        self._batch_size = batch_size
+        # self.curr_device = None
 
-    def forward(self, x: Tensor, **kwargs) -> Tensor:
-        return self.model(x, **kwargs)
+    def forward(self, x: Tensor, **kwargs) -> list:
+        return self.model.forward(x, **kwargs)
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.model.parameters(), lr=self.lr)
 
     def training_step(self, batch, batch_idx, optimizer_idx=0):
 
         images, labels = batch
-        self.curr_device = images.device
+        # self.curr_device = images.device
 
-        results = self.forward(images, labels=labels)
-        train_loss = self.model.loss_function(*results,
-                                            M_N = self.hparams['batch_size']/self.dm.len_train_data,
-                                            optimizer_idx = optimizer_idx,
-                                            batch_idx = batch_idx)
-        
-        self.logger.experiment.log({key: val.item() for key, val in train_loss.items()})
+        # Results is a list of outputs computed during the forward pass
+        # of the form: [reconstructions, input, mu, log_var]
+        results_list = self.forward(images, labels=labels)
 
-        return train_loss
+        # Note that train_loss is a dictionary containing the various losses
+        train_loss_dict = self.model.loss_function(
+            *results_list,
+            M_N=self._batch_size / self._train_size,
+            optimizer_idx=optimizer_idx,
+            batch_idx=batch_idx)
 
-    def validation_step(self, batch, batch_idx, optimizer_idx = 0):
+        self.log_dict(train_loss_dict)
+        return train_loss_dict
+
+    def validation_step(self, batch, batch_idx, optimizer_idx=0):
         real_img, labels = batch
-        self.curr_device = real_img.device
+        # self.curr_device = real_img.device
 
-        results = self.forward(real_img, labels = labels)
-        val_loss = self.model.loss_function(*results,
-                                            M_N = self.hparams['batch_size']/self.dm.len_val_data,
-                                            optimizer_idx = optimizer_idx,
-                                            batch_idx = batch_idx)
+        results_list = self.forward(real_img, labels=labels)
+        val_loss_dict = self.model.loss_function(
+            *results_list,
+            M_N=self._batch_size / self._val_size,
+            optimizer_idx=optimizer_idx,
+            batch_idx=batch_idx)
 
-        return val_loss
+        return val_loss_dict
 
     def validation_end(self, outputs):
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        tensorboard_logs = {'avg_val_loss': avg_loss}
-        self.sample_images()
-        return {'val_loss': avg_loss, 'log': tensorboard_logs}
+        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
+        self.log('avg_val_loss', avg_loss)
+        # self.sample_images()
+        return {'val_loss': avg_loss}
 
     def sample_images(self):
         # Get sample reconstruction image
         test_input, test_label = next(iter(self.dm.val_dataloader()))
         test_input = test_input.to(self.curr_device)
         test_label = test_label.to(self.curr_device)
-        recons = self.model.generate(test_input, labels = test_label)
+        recons = self.model.generate(test_input, labels=test_label)
 
         vutils.save_image(recons.data,
                           f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
@@ -78,7 +91,7 @@ class CVAEBaseModule(pl.LightningModule):
         try:
             samples = self.model.sample(144,
                                         self.curr_device,
-                                        labels = test_label)
+                                        labels=test_label)
             vutils.save_image(samples.cpu().data,
                               f"{self.logger.save_dir}{self.logger.name}/version_{self.logger.version}/"
                               f"{self.logger.name}_{self.current_epoch}.png",
@@ -87,21 +100,8 @@ class CVAEBaseModule(pl.LightningModule):
         except:
             pass
 
+        del test_input, recons  # , samples
 
-        del test_input, recons #, samples
-
-    def train_dataloader(self):
-        return self.dm.train_dataloader()
-
-    def val_dataloader(self):
-        return self.dm.val_dataloader()
-
-    def test_dataloader(self):
-        return self.dm.test_dataloader()
-
-    def configure_optimizers(self):
-        return torch.optim.Adam(self.model.parameters(),
-                               lr=self.hparams['learning_rate'])
-
-
-
+    @property
+    def version(self):
+        return self.logger.version

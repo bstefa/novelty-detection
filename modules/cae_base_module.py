@@ -2,19 +2,19 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 
+from utils.dtypes import *
 
 class CAEBaseModule(pl.LightningModule):
     def __init__(
             self,
             model: nn.Module,
             learning_rate: float = 0.001,
-            weight_decay_coefficient: float = 0.01,
-    ):
+            weight_decay_coefficient: float = 0.01):
         super(CAEBaseModule, self).__init__()
 
         self.model = model
         self.lr = learning_rate
-        self.wd = weight_decay_coefficient if weight_decay_coefficient is not None else 0.01
+        self.wd = weight_decay_coefficient
 
         # Return a callable torch.nn.XLoss object
         # TODO: Add the ability to quickly change the loss function being implemented (e.g. SSIM)
@@ -63,3 +63,7 @@ class CAEBaseModule(pl.LightningModule):
                 'batch_rc': batch_rc.detach()  # Tensor
             }
         }
+
+    @property
+    def version(self):
+        return self.logger.version

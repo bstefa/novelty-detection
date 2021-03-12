@@ -1,86 +1,86 @@
 import torch
 import pytorch_lightning as pl
+
 from models.cvae import VariationalAutoEncoder
 from datasets.mnist import MNISTDataModule
+from datasets.emnist import EMNISTDataModule
 from modules.cvae_base_module import CVAEBaseModule
 from utils import tools
 from torchsummary import summary
-from pytorch_lightning.loggers import TestTubeLogger
 
 def main():
     # Load configs
-    print("Loading configs...")
-    DEFAULT_CONFIG_FILE = 'configs/cvae_trainer.yaml'
+    print('[INFO] Loading configs...')
     config = tools.config_from_command_line(DEFAULT_CONFIG_FILE)
-
-    # Initialize device
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    # Unpack configuration
+    exp_params = config['experiment-parameters']
+    data_params = config['data-parameters']
+    module_params = config['module-parameters']
 
     # Initialize datamodule
-    print("Initializing datamodule..")
-    datamodule = MNISTDataModule(config)
+    print('[INFO] Initializing datamodule..')
+    datamodule = EMNISTDataModule(**data_params)
     datamodule.prepare_data()
-    datamodule.setup()
+    datamodule.setup('train')
 
     # Initialize model
-    print("Initializing model..")
-    model = VariationalAutoEncoder(input_channels=1, 
-                                   input_height=28, 
-                                   input_width=28, 
-                                   latent_dims=10)
+    print('[INFO] Initializing model..')
+    model = VariationalAutoEncoder(
+        input_channels=1,
+        input_height=28,
+        input_width=28,
+        latent_dims=10)
 
-    model.to(device)
-
-    summary(model, (1, 28, 28))
+    # View a summary of the model
+    summary(model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')), (1, 28, 28))
 
     # Initialize module
-    print("Initializing module..")
-    module = CVAEBaseModule(datamodule, model, config)
-
-    # Initialize loggers to monitor training and validation
-    print("Initializing logger..")
-    # tb_logger = pl.loggers.TensorBoardLogger(
-    #     config['log_directory'],
-    #     name=config['experiment_name']
-    # )
-
-    tt_logger = TestTubeLogger(
-        save_dir=config['log_directory'],
-        name=config['experiment_name'],
-        debug=False,
-        version=1.0,
-        create_git_tag=False,
+    print('[INFO] Initializing module..')
+    module = CVAEBaseModule(
+        model,
+        train_size=datamodule.train_size,
+        val_size=datamodule.val_size,
+        batch_size=datamodule.batch_size,
+        **module_params
     )
+    # # Initialize loggers to monitor training and validation
+    # print('[INFO] Initializing logger..')
+    logger = pl.loggers.TestTubeLogger(
+        exp_params['log_dir'],
+        name=exp_params['name'],
+        debug=False,
+        create_git_tag=False
+    )
+
     # Initialize the Trainer object
-    print("Initializing trainer..")
+    print('[INFO] Initializing trainer..')
     trainer = pl.Trainer(
+        weights_summary=None,
         gpus=1,
-        logger=tt_logger,
-        max_epochs=config['max_epochs'],
+        logger=logger,
+        max_epochs=100,
         check_val_every_n_epoch=1,
-        # auto_lr_find=(True if config['learning_rate'] is None else False),
         callbacks=[
-            pl.callbacks.early_stopping.EarlyStopping(monitor='loss', patience=10)
+            pl.callbacks.early_stopping.EarlyStopping(monitor='loss', patience=5)
         ]
     )
 
     # Find learning rate
-    print("Finding optimal learning rate and batch size..")
-    lr_finder = trainer.tuner.lr_find(module)
-    module.hparams.learning_rate = lr_finder.suggestion()
-    print('Learning rate: ', module.hparams.learning_rate)
-    fig = lr_finder.plot(suggest=True)
-    fig.show()
-
-    tuner = pl.tuner.tuning.Tuner(trainer)
-    module.hparams.batch_size = tuner.scale_batch_size(module)
-    print('Batch size: ', module.hparams.batch_size)
+    if module_params['learning_rate'] == 'auto':
+        lr_finder = trainer.tuner.lr_find(module, datamodule)
+        module.lr = lr_finder.suggestion()
+        print('[INFO] Using learning rate: ', module.lr)
+        lr_finder_fig = lr_finder.plot(suggest=True, show=False)
 
     # Train the model
-    print("Training model")
-    trainer.fit(module)
+    print('[INFO] Training model...')
+    trainer.fit(module, datamodule)
 
-    module.sample_images()
+    # Some final saving once training is complete
+    tools.save_object_to_version(lr_finder_fig, version=module.version, filename='lr-find.eps', **exp_params)
+    tools.save_object_to_version(config, version=module.version, filename='configuration.yaml', **exp_params)
+
 
 if __name__ == '__main__':
+    DEFAULT_CONFIG_FILE = 'configs/cvae.yaml'
     main()
