@@ -190,24 +190,24 @@ class LunarAnalogueDataModule(pl.core.datamodule.LightningDataModule):
         # Have to use fit in the datamodule as per PL requirements
         if stage == 'fit' or stage == 'train' or stage is None:
             # Setup training and validation data for use in dataloaders
-            dataset_trainval = LunarAnalogueDataset(
+            trainval_set = LunarAnalogueDataset(
                 self._root_data_path,
                 self._glob_pattern_train,
                 stage='train',
                 transforms=self._transforms
             )
             # Since setup is called from every process, setting state here is okay
-            self.train_size = int(np.floor(len(dataset_trainval) * self._train_fraction))
-            self.val_size = len(dataset_trainval) - self.train_size
+            self.train_size = int(np.floor(len(trainval_set) * self._train_fraction))
+            self.val_size = len(trainval_set) - self.train_size
 
-            self._dataset_train, self._dataset_val = torch.utils.data.random_split(
-                dataset_trainval,
+            self._train_set, self._val_set = torch.utils.data.random_split(
+                trainval_set,
                 [self.train_size, self.val_size]
             )
 
         if stage == 'test' or stage is None:
             # Setup testing data as well
-            self._dataset_test = LunarAnalogueDataset(
+            self._test_set = LunarAnalogueDataset(
                 self._root_data_path,
                 self._glob_pattern_test,
                 stage='test',
@@ -216,7 +216,7 @@ class LunarAnalogueDataModule(pl.core.datamodule.LightningDataModule):
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
-            self._dataset_train,
+            self._train_set,
             batch_size=self._batch_size,
             drop_last=True,
             num_workers=8
@@ -224,7 +224,7 @@ class LunarAnalogueDataModule(pl.core.datamodule.LightningDataModule):
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
-            self._dataset_val,
+            self._val_set,
             batch_size=self._batch_size,
             drop_last=True,
             num_workers=8
@@ -232,7 +232,7 @@ class LunarAnalogueDataModule(pl.core.datamodule.LightningDataModule):
 
     def test_dataloader(self):
         return torch.utils.data.DataLoader(
-            self._dataset_test,
+            self._test_set,
             batch_size=self._batch_size,
             drop_last=True,
             num_workers=8

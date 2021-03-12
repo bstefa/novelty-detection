@@ -9,7 +9,9 @@ import sys
 import yaml
 
 from pathlib import Path
+from pprint import pprint
 
+from utils import dtypes
 
 def config_from_command_line(default_config: str):
     if len(sys.argv) == 1:
@@ -29,7 +31,7 @@ def config_from_command_line(default_config: str):
     with open(str(config_file)) as f:
         y = yaml.full_load(f)
         print(f'Experimental parameters\n------')
-        print('\n'.join(f'{k}: {v}' for k, v in y.items()), '\n')
+        pprint(y)
         return y
 
 
@@ -44,6 +46,16 @@ def save_dictionary_to_current_version(log_dir: str, name: str, filename: str, d
 
     with open(str(save_path/filename), 'w') as f:
         yaml.dump(dictionary, f)
+
+
+def save_object_to_version(obj, version: int, filename: str, log_dir: str = 'logs', name: str = 'Unnamed'):
+    save_path = Path(log_dir)/name/f'version_{version}'
+    if isinstance(obj, dtypes.Figure):
+        obj.savefig(save_path/filename, format='eps')
+    if isinstance(obj, dict):
+        with open(str(save_path/filename), 'w') as f:
+            yaml.dump(obj, f)
+
 
 
 def chw2hwc(x):

@@ -19,7 +19,7 @@ from datasets.lunar_analogue import LunarAnalogueDataModule
 
 def main():
     # Set defaults
-    default_config_file = 'configs/reference_cae.yaml'
+    DEFAULT_CONFIG_FILE = 'configs/reference_cae.yaml'
     config = tools.config_from_command_line(default_config_file)
     # Unpack configuration
     exp_params = config['experiment-parameters']
@@ -47,28 +47,28 @@ def main():
         gpus=1,
         logger=logger,
         max_epochs=100,
-        auto_lr_find=(True if module_params['learning_rate'] == 0. else False),
         callbacks=[
             pl.callbacks.EarlyStopping(monitor='val_loss', patience=4),
             pl.callbacks.GPUStatsMonitor(),
             pl.callbacks.ModelCheckpoint(monitor='val_loss', filename='{val_loss:.2f}-{epoch}', save_last=True),
-            callbacks.SimpleHyperparameterSaver(exp_params['log_dir'], exp_params['name'], 'hyperparameters.yaml'),
+            # callbacks.SimpleHyperparameterSaver(exp_params['log_dir'], exp_params['name'], 'hyperparameters.yaml'),
             callbacks.VisualizationCallback()
         ]
     )
-    # Find the learning rate automatically
-    trainer.tune(module, datamodule)
+    # Find learning rate
+    if module_params['learning_rate'] == 'auto':
+        lr_finder = trainer.tuner.lr_find(module, datamodule)
+        module.lr = lr_finder.suggestion()
+        print('[INFO] Using learning rate: ', module.lr)
+        config['module-parameters']['learning_rate'] = module.lr  # Set learning rate to config for reference
+        lr_finder_fig = lr_finder.plot(suggest=True, show=False)
 
     # Train the model
     trainer.fit(module, datamodule)
 
-    # Save the imported configuration only after the model has completed training
-    tools.save_dictionary_to_current_version(
-        exp_params['log_dir'],
-        exp_params['name'],
-        'configuration.yaml',
-        config
-    )
+    # Some final saving once training is complete
+    tools.save_object_to_version(lr_finder_fig, version=module.version, filename='lr-find.eps', **exp_params)
+    tools.save_object_to_version(config, version=module.version, filename='configuration.yaml', **exp_params)
 
 
 if __name__ == '__main__':

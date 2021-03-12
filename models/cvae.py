@@ -10,6 +10,7 @@ import os
 
 from utils.dtypes import *
 
+
 class VariationalAutoEncoder(nn.Module):
 
     def __init__(self,
@@ -132,7 +133,7 @@ class VariationalAutoEncoder(nn.Module):
 
         elbo_loss = reconstruction_loss + kld_weight * kld_loss
 
-        return {'loss': elbo_loss, 'reconstruction_loss':reconstruction_loss, 'KLD': -kld_loss}
+        return {'loss': elbo_loss, 'reconstruction_loss': reconstruction_loss, 'KLD': -kld_loss}
 
     def sample(self, num_samples: int, current_device: int, **kwargs) -> Tensor:
         """
