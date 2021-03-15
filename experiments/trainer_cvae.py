@@ -2,11 +2,11 @@ import torch
 import pytorch_lightning as pl
 
 from models.cvae import VariationalAutoEncoder
-from datasets.mnist import MNISTDataModule
-from datasets.emnist import EMNISTDataModule
+from datasets import supported_datamodules
 from modules.cvae_base_module import CVAEBaseModule
 from utils import tools
 from torchsummary import summary
+
 
 def main():
     # Load configs
@@ -19,20 +19,17 @@ def main():
 
     # Initialize datamodule
     print('[INFO] Initializing datamodule..')
-    datamodule = EMNISTDataModule(**data_params)
+    datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
     datamodule.prepare_data()
     datamodule.setup('train')
 
+
     # Initialize model
     print('[INFO] Initializing model..')
-    model = VariationalAutoEncoder(
-        input_channels=1,
-        input_height=28,
-        input_width=28,
-        latent_dims=10)
+    model = VariationalAutoEncoder(datamodule.shape, **module_params)
 
     # View a summary of the model
-    summary(model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')), (1, 28, 28))
+    summary(model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')), datamodule.shape)
 
     # Initialize module
     print('[INFO] Initializing module..')
@@ -41,16 +38,15 @@ def main():
         train_size=datamodule.train_size,
         val_size=datamodule.val_size,
         batch_size=datamodule.batch_size,
-        **module_params
-    )
-    # # Initialize loggers to monitor training and validation
-    # print('[INFO] Initializing logger..')
+        **module_params)
+
+    # Initialize loggers to monitor training and validation
+    print('[INFO] Initializing logger..')
     logger = pl.loggers.TestTubeLogger(
         exp_params['log_dir'],
         name=exp_params['name'],
         debug=False,
-        create_git_tag=False
-    )
+        create_git_tag=False)
 
     # Initialize the Trainer object
     print('[INFO] Initializing trainer..')
@@ -62,8 +58,7 @@ def main():
         check_val_every_n_epoch=1,
         callbacks=[
             pl.callbacks.early_stopping.EarlyStopping(monitor='loss', patience=5)
-        ]
-    )
+        ])
 
     # Find learning rate
     if module_params['learning_rate'] == 'auto':
@@ -82,5 +77,5 @@ def main():
 
 
 if __name__ == '__main__':
-    DEFAULT_CONFIG_FILE = 'configs/cvae.yaml'
+    DEFAULT_CONFIG_FILE = 'configs/cvae/cvae_emnist.yaml'
     main()

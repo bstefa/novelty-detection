@@ -95,9 +95,10 @@ class VisualizationCallback(pl.callbacks.base.Callback):
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if self._save_at_train_step == pl_module.global_step:
-            batch_rc = pl_module.forward(batch.cuda())
+            batch_in, _ = batch
+            batch_rc = pl_module.forward(batch_in.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
             images = {
-                'batch_in': batch.detach(),  # Tensor
+                'batch_in': batch_in.detach(),  # Tensor
                 'batch_rc': batch_rc.detach()  # Tensor
             }
             _handle_image_logging(images, pl_module)

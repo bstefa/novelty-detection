@@ -13,7 +13,7 @@ class CAEBaseModule(pl.LightningModule):
         super(CAEBaseModule, self).__init__()
 
         self.model = model
-        self.lr = learning_rate
+        self.lr = learning_rate if learning_rate is not None else 0.001
         self.wd = weight_decay_coefficient
 
         # Return a callable torch.nn.XLoss object
@@ -26,26 +26,30 @@ class CAEBaseModule(pl.LightningModule):
     def configure_optimizers(self):
         return torch.optim.AdamW(self.model.parameters(), lr=self.lr, weight_decay=self.wd)
 
-    def training_step(self, batch_in, batch_nb):
+    def training_step(self, batch, batch_nb):
 
-        batch_rc = self(batch_in)
+        batch_in, _ = batch
+
+        batch_rc = self.forward(batch_in)
         loss = self.loss_function(batch_rc, batch_in)
 
         self.log('train_loss', loss)
         return {'loss': loss}  # The returned object must contain a 'loss' key
 
-    def validation_step(self, batch_in, batch_nb):
+    def validation_step(self, batch, batch_nb):
 
-        batch_rc = self(batch_in)
+        batch_in, _ = batch
+
+        batch_rc = self.forward(batch_in)
         loss = self.loss_function(batch_rc, batch_in)
 
         self.log('val_loss', loss)
         return {'val_loss': loss}
 
-    def test_step(self, batch_tuple, batch_nb):
+    def test_step(self, batch, batch_nb):
 
-        batch_in, batch_labels = batch_tuple
-        batch_rc = self(batch_in)
+        batch_in, batch_labels = batch
+        batch_rc = self.forward(batch_in)
         loss = self.loss_function(batch_rc, batch_in)
 
         # Calculate individual novelty scores
