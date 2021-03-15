@@ -2,6 +2,7 @@ import torch
 
 from torch import nn
 from torch.nn import functional as F
+from utils import tools
 from utils.dtypes import *
 
 
@@ -59,6 +60,7 @@ class VariationalAutoEncoder(nn.Module):
         Receives an input image and outputs the mean and the logvar for the distribution q(z|x)
         """
         result = self.encoder(input)
+        print('ENCODER OUTPUT SHAPE:', result.shape)
         result = torch.flatten(result, start_dim=1)
 
         # Split the result into mu and var components
