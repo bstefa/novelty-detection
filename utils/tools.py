@@ -56,6 +56,9 @@ def save_object_to_version(obj, version: int, filename: str, log_dir: str = 'log
             yaml.dump(obj, f)
 
 
+def calc_out_size(in_size, padding, kernel_size, dilation, stride):
+    return ((in_size + 2*padding - dilation*(kernel_size-1) - 1) / stride) + 1
+
 
 def chw2hwc(x):
     if isinstance(x, torch.Tensor):
