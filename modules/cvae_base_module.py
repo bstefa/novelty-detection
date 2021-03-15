@@ -15,7 +15,8 @@ class CVAEBaseModule(pl.LightningModule):
             train_size: int,
             val_size: int,
             learning_rate: float = 0.001,
-            batch_size: int = 8):
+            batch_size: int = 8,
+            **kwargs):
         super(CVAEBaseModule, self).__init__()
 
         self.model = model
@@ -23,7 +24,6 @@ class CVAEBaseModule(pl.LightningModule):
         self._train_size = train_size
         self._val_size = val_size
         self._batch_size = batch_size
-        # self.curr_device = None
 
     def forward(self, x: Tensor, **kwargs) -> list:
         return self.model.forward(x, **kwargs)
@@ -34,7 +34,6 @@ class CVAEBaseModule(pl.LightningModule):
     def training_step(self, batch, batch_idx, optimizer_idx=0):
 
         images, labels = batch
-        # self.curr_device = images.device
 
         # Results is a list of outputs computed during the forward pass
         # of the form: [reconstructions, input, mu, log_var]
@@ -52,7 +51,6 @@ class CVAEBaseModule(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx, optimizer_idx=0):
         real_img, labels = batch
-        # self.curr_device = real_img.device
 
         results_list = self.forward(real_img, labels=labels)
         val_loss_dict = self.model.loss_function(
@@ -81,12 +79,6 @@ class CVAEBaseModule(pl.LightningModule):
                           f"recons_{self.logger.name}_{self.current_epoch}.png",
                           normalize=True,
                           nrow=12)
-
-        # vutils.save_image(test_input.data,
-        #                   f"{self.logger.save_dir}{self.logger.name}/version_{self.logger.version}/"
-        #                   f"real_img_{self.logger.name}_{self.current_epoch}.png",
-        #                   normalize=True,
-        #                   nrow=12)
 
         try:
             samples = self.model.sample(144,

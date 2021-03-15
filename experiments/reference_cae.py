@@ -7,31 +7,34 @@ Uses:
     Module: CAEBaseModule
     Model: ReferenceCAE
     Dataset: LunarAnalogueDataGenerator
-    Configuration: reference_cae.yaml
+    Configuration: reference_cae_lunar_analogue.yaml
 """
 import pytorch_lightning as pl
 
 from utils import tools, callbacks
 from modules.cae_base_module import CAEBaseModule
 from models.reference_cae import ReferenceCAE
-from datasets.lunar_analogue import LunarAnalogueDataModule
+from datasets import supported_datamodules
+from datasets.emnist import EMNISTDataModule
 
 
 def main():
     # Set defaults
-    DEFAULT_CONFIG_FILE = 'configs/reference_cae.yaml'
-    config = tools.config_from_command_line(default_config_file)
+    config = tools.config_from_command_line(DEFAULT_CONFIG_FILE)
     # Unpack configuration
     exp_params = config['experiment-parameters']
     data_params = config['data-parameters']
     module_params = config['module-parameters']
 
-    # Initialize datamodule
-    datamodule = LunarAnalogueDataModule(**data_params)
+    # Initialize datamodule (see datasets/__init__.py for details)
+    datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
+    datamodule.prepare_data()
     datamodule.setup('train')
+    print(datamodule.train_size)
 
-    # Initialize model
-    model = ReferenceCAE()
+    # Initialize model with the number of channels in the data (note that torch uses
+    # the convention of shaping data as [C, H, W] as opposed to the usual [H, W, C]
+    model = ReferenceCAE(in_shape=datamodule.shape)
 
     # Initialize experimental module
     module = CAEBaseModule(model, **module_params)
@@ -51,16 +54,15 @@ def main():
             pl.callbacks.EarlyStopping(monitor='val_loss', patience=4),
             pl.callbacks.GPUStatsMonitor(),
             pl.callbacks.ModelCheckpoint(monitor='val_loss', filename='{val_loss:.2f}-{epoch}', save_last=True),
-            # callbacks.SimpleHyperparameterSaver(exp_params['log_dir'], exp_params['name'], 'hyperparameters.yaml'),
             callbacks.VisualizationCallback()
         ]
     )
     # Find learning rate
-    if module_params['learning_rate'] == 'auto':
+    if module_params['learning_rate'] is None:
         lr_finder = trainer.tuner.lr_find(module, datamodule)
         module.lr = lr_finder.suggestion()
         print('[INFO] Using learning rate: ', module.lr)
-        config['module-parameters']['learning_rate'] = module.lr  # Set learning rate to config for reference
+        config['module-parameters']['learning_rate'] = module.lr  # Replace 'auto' with actual learning rate
         lr_finder_fig = lr_finder.plot(suggest=True, show=False)
 
     # Train the model
@@ -72,4 +74,5 @@ def main():
 
 
 if __name__ == '__main__':
+    DEFAULT_CONFIG_FILE = 'configs/cae/reference_cae_lunar_analogue.yaml'
     main()

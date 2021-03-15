@@ -13,22 +13,21 @@ from pprint import pprint
 
 from utils import dtypes
 
+
 def config_from_command_line(default_config: str):
     if len(sys.argv) == 1:
-        # Then the file being called is the only argument
-        # so return the default configuration
+        # Then the file being called is the only argument so return the default configuration
         config_file = default_config
     elif len(sys.argv) == 2:
-        # Then a specific configuration file has been used
-        # so load it
-        config_file = sys.argv[0]
+        # Then a specific configuration file has been used so load it
+        config_file = str(sys.argv[1])
     elif all([len(sys.argv) == 3, sys.argv[1] == '-f']):
         config_file = default_config
     else:
         print(sys.argv)
         raise ValueError('CLI only accepts 0 args (default) or 1 arg (path/to/config).')
 
-    with open(str(config_file)) as f:
+    with open(str(config_file), 'r') as f:
         y = yaml.full_load(f)
         print(f'Experimental parameters\n------')
         pprint(y)

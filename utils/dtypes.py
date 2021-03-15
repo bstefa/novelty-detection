@@ -1,6 +1,6 @@
 from typing import List, Callable, Union, Any, TypeVar, Tuple, Optional
 # from torch import tensor as Tensor
-import matplotlib
+from matplotlib import figure
 
 Tensor = TypeVar('torch.tensor')
-Figure = matplotlib.figure.Figure
+Figure = figure.Figure
