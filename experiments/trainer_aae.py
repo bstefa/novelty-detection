@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 
 from models.simple_aae import SimpleAAE
 from datasets import supported_datamodules
-from modules.cvae_base_module import CVAEBaseModule
+from modules.aae_base_module import AAEBaseModule
 from utils import tools
 from torchsummary import summary
 from functools import reduce
@@ -23,8 +23,6 @@ exp_params = config['experiment-parameters']
 data_params = config['data-parameters']
 module_params = config['module-parameters']
 
-#%%
-
 # Initialize datamodule
 print('[INFO] Initializing datamodule..')
 datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
@@ -32,14 +30,14 @@ datamodule.prepare_data()
 datamodule.setup('train')
 
 print(reduce(lambda x, y: x*y, datamodule.shape))
-#%%
+print(datamodule.shape)
 
 # Initialize model
 print('[INFO] Initializing model..')
-model = SimpleAAE(datamodule.shape, **module_params)
+model = SimpleAAE(reduce(lambda x, y: x*y, datamodule.shape), **module_params)
 
 # View a summary of the model
-summary(model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')), datamodule.shape)
+# summary(model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')), datamodule.shape)
 
 # Initialize module
 print('[INFO] Initializing module..')

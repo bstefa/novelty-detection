@@ -31,7 +31,7 @@ module-parameters:
 
   # learning_rate (optional, float, default='auto'): Scaling factor for gradient descent step.
   # Set to 'auto' for default.
-  learning_rate: 'auto'
+  learning_rate: 0.01
 
   # latent_dims (required, int): Number of dimensions to use in the latent space of the VAE
   latent_dims: 10
