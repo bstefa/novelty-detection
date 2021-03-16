@@ -66,16 +66,19 @@ class EMNISTDataModule(BaseDataModule):
         return torch.utils.data.DataLoader(
             self._train_set,
             batch_size=self._batch_size,
+            drop_last=True,
             num_workers=8)
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
             self._val_set,
             batch_size=self._batch_size,
+            drop_last=True,
             num_workers=8)
 
     def test_dataloader(self):
         return torch.utils.data.DataLoader(
             self._test_set,
             batch_size=self._batch_size,
+            drop_last=True,
             num_workers=8)
