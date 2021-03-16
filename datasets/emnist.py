@@ -17,9 +17,9 @@ class EMNISTDataModule(BaseDataModule):
             train_fraction: float = 0.8,
             download: bool = False,
             data_transforms: Optional[transforms.Compose] = None,
-            **kwargs
-    ):
+            **kwargs):
         super(EMNISTDataModule, self).__init__()
+        print(f'[INFO] Loading {self.__class__.__name__}...')
 
         self._download = download
         self._root_data_path = root_data_path
