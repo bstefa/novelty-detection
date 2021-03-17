@@ -13,6 +13,7 @@ class AAEBaseModule(pl.LightningModule):
             train_size: int,
             val_size: int,
             learning_rate: float = 0.001,
+            weight_decay_coefficient: float = 0.01,
             batch_size: int = 8,
             **kwargs):
         super().__init__()
@@ -26,14 +27,24 @@ class AAEBaseModule(pl.LightningModule):
         self.generator_loss = model.generator_loss
 
         self.lr = learning_rate if learning_rate != 'auto' else 0.001
+        self.wd = weight_decay_coefficient
         self._train_size = train_size
         self._val_size = val_size
         self._batch_size = batch_size
 
     def configure_optimizers(self):
-        opt_reconstruction = torch.optim.Adam([*self.encoder.parameters(), *self.decoder.parameters()])
-        opt_generator = torch.optim.Adam(self.encoder.parameters())
-        opt_discriminator = torch.optim.Adam(self.discriminator.parameters())
+        opt_reconstruction = torch.optim.AdamW(
+            [*self.encoder.parameters(), *self.decoder.parameters()],
+            lr=self.lr,
+            weight_decay=self.wd)
+        opt_generator = torch.optim.AdamW(
+            self.encoder.parameters(),
+            lr=self.lr,
+            weight_decay=self.wd)
+        opt_discriminator = torch.optim.AdamW(
+            self.discriminator.parameters(),
+            lr=self.lr,
+            weight_decay=self.wd)
         return [opt_reconstruction, opt_discriminator, opt_generator], []
 
     def training_step(self, batch, batch_idx, optimizer_idx):
@@ -61,6 +72,14 @@ class AAEBaseModule(pl.LightningModule):
             generator_loss = self.generator_loss(batch_in)
             self.log('g_loss', generator_loss, on_epoch=True, prog_bar=True)
             return generator_loss
+
+    def validation_step(self, batch, batch_idx):
+        # Validate with reconstruction loss
+        batch_in, _ = batch
+        batch_in = batch_in.view(self._batch_size, -1)
+        reconstruction_loss = self.reconstruction_loss(batch_in)
+        self.log('val_r_loss', reconstruction_loss, prog_bar=True)
+        return reconstruction_loss
 
     @property
     def version(self):

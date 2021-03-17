@@ -47,7 +47,6 @@ def _log_to_tensorboard(result: dict, compute: dict, pl_module):
 
 
 def _log_images(compute: dict, pl_module):
-
     logger_save_path = os.path.join(
         pl_module.logger.save_dir,
         pl_module.logger.name,
@@ -70,14 +69,15 @@ def _log_images(compute: dict, pl_module):
 
 
 def _handle_image_logging(images: dict, pl_module):
-
     if pl_module.logger.version is None:
         return
     else:
+        batch_in_01 = tools.unstandardize_batch(images['batch_in'])
+        batch_rc_01 = tools.unstandardize_batch(images['batch_rc'])
         compute = {
-            'batch_in_01': tools.unstandardize_batch(images['batch_in']),
-            'batch_rc_01': tools.unstandardize_batch(images['batch_rc']),
-            'error_map': tools.get_error_map(images['batch_in'], images['batch_rc'])
+            'batch_in_01': batch_in_01,
+            'batch_rc_01': batch_rc_01,
+            'error_map': tools.get_error_map(batch_in_01, batch_rc_01)
         }
 
         _log_to_tensorboard(images, compute, pl_module)
@@ -117,4 +117,27 @@ class SimpleHyperparameterSaver(pl.callbacks.base.Callback):
                 'weight_decay_coefficient': pl_module.wd
             }
             tools.save_dictionary_to_current_version(self._log_dir, self._name, self._filename, hps)
+
+
+class AAEVisualization(pl.callbacks.base.Callback):
+    def __init__(self):
+        self._save_at_train_step = 0
+
+    def on_epoch_start(self, trainer, pl_module):
+        # Save images at second training step every epoch
+        self._save_at_train_step = pl_module.global_step + 4
+
+    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+        if self._save_at_train_step == pl_module.global_step:
+            batch_in, _ = batch
+            image_shape = batch_in.shape
+
+            batch_in = batch_in.view(image_shape[0], -1)
+            batch_rc = pl_module.decoder(pl_module.encoder(batch_in.to(pl_module.device)))
+
+            images = {
+                'batch_in': batch_in.detach().view(*image_shape).transpose(2, 3),
+                'batch_rc': batch_rc.detach().view(*image_shape).transpose(2, 3)
+            }
+            _handle_image_logging(images, pl_module)
 
