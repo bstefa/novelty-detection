@@ -11,10 +11,10 @@ class Encoder(nn.Module):
         # TODO: Consider initializing the weights explicitly here
         self.encoder = nn.Sequential(
             nn.Linear(in_chans, 1000),
-            nn.Dropout(p=0.2),
+            nn.Dropout(p=0.3),
             nn.ReLU(),
             nn.Linear(1000, 1000),
-            nn.Dropout(p=0.2),
+            nn.Dropout(p=0.3),
             nn.ReLU(),
             nn.Linear(1000, latent_chans))
 
@@ -49,10 +49,10 @@ class Discriminator(nn.Module):
         # TODO: Consider initializing the weights explicitly here
         self.discriminator = nn.Sequential(
             nn.Linear(latent_chans, 1000),
-            nn.Dropout(p=0.1),
+            nn.Dropout(p=0.2),
             nn.ReLU(),
             nn.Linear(1000, 1000),
-            nn.Dropout(p=0.1),
+            nn.Dropout(p=0.2),
             nn.ReLU(),
             nn.Linear(1000, 1),
             nn.Sigmoid())
@@ -73,26 +73,33 @@ class SimpleAAE(nn.Module):
     def prior(self, *size):
         return torch.randn(*size, device=self.device)
 
-    def generator_loss(self, batch_in: Tensor):
+    def generator_loss(self, batch_in: Tensor, epsilon: float = 1e-8):
         self.encoder.train()
         self.discriminator.eval()
 
         z_generated = self.encoder(batch_in)
-        return -torch.mean(torch.log(self.discriminator(z_generated)))
+        d_score = self.discriminator(z_generated)
 
-    def discriminator_loss(self, batch_in: Tensor):
+        assert not any(torch.isnan(d_score)), 'Can\'t pass NaN to logarithm'
+        assert not any(d_score < 0.), 'Can\'t pass negative number to logarithm'
+
+        return -torch.mean(torch.log(d_score + epsilon))
+
+    def discriminator_loss(self, batch_in: Tensor, epsilon: float = 1e-8):
         self.discriminator.train()
         self.encoder.eval()  # Freeze dropout and other non-training parameters
 
         z_fake = self.encoder(batch_in)
-        d_loss_fake = self.discriminator(z_fake)
+        d_score_fake = self.discriminator(z_fake)
 
         # The discriminator take samples with size of the latent space
         z_real = self.prior(*z_fake.shape)
-        d_loss_real = self.discriminator(z_real)
+        d_score_real = self.discriminator(z_real)
 
-        # TODO: Refamiliarize yourself with the concept of log-likelihood
-        return -torch.mean(torch.log(d_loss_real) + torch.log(1 - d_loss_fake))
+        assert not any(d_score_fake < 0.), 'Abort. Can\'t pass negative number to logarithm'
+        assert not any(d_score_real < 0.), 'Abort. Can\'t pass negative number to logarithm'
+        # TODO: Replace this loss with losses already implement in Pytorch is possible
+        return -torch.mean(torch.log(d_score_real + epsilon) + torch.log(1 - d_score_fake + epsilon))
 
     def reconstruction_loss(self, batch_in: Tensor):
         self.encoder.train()

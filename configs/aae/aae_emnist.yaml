@@ -7,12 +7,11 @@ experiment-parameters:
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
 
-  # datamodule (required, str): The datamodule (or datagenerator) to use for your experiment.
-  datamodule: 'emnist-datamodule'
-
-
 # data-parameters: Contains information used for preparing and loading the data.
 data-parameters:
+
+  # datamodule (required, str): The datamodule (or datagenerator) to use for your experiment.
+  datamodule: 'emnist-datamodule'
 
   # root_data_path (required, str): Path to the common directory node immediately before training and testing branches.
   root_data_path: '/home/brahste/Datasets/toy'
@@ -31,7 +30,11 @@ module-parameters:
 
   # learning_rate (optional, float, default='auto'): Scaling factor for gradient descent step.
   # Set to 'auto' for default.
-  learning_rate: 0.01
+  learning_rate: 0.0001
+
+  # weight_decay_coefficient (optional, float, default=0.01): Scaling factor for L2 regularization term on loss.
+  # Set to null for default.
+  weight_decay_coefficient: 0.1
 
   # latent_dims (required, int): Number of dimensions to use in the latent space of the VAE
   latent_dims: 10
