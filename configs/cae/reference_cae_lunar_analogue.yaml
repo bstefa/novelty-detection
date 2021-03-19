@@ -8,7 +8,7 @@ experiment-parameters:
   log_dir: 'logs'
 
   # datamodule (required, str): The datamodule (or datagenerator) to use for your experiment.
-  datamodule: 'lunar-analogue-datamodule'
+  datamodule: 'LunarAnalogueDataModule'
 
 # data-parameters: Contains information used for preparing and loading the data.
 data-parameters:
