@@ -11,7 +11,7 @@ import yaml
 from pathlib import Path
 from pprint import pprint
 
-from utils import dtypes
+from utils.dtypes import *
 
 
 def config_from_command_line(default_config: str):
@@ -39,14 +39,6 @@ def config_from_file(config_file: str):
         y = yaml.full_load(f)
 
 
-def save_dictionary_to_current_version(log_dir: str, name: str, filename: str, dictionary: dict):
-    save_path = Path(log_dir)/name
-    save_path = sorted(save_path.glob('v*'))[-1]
-
-    with open(str(save_path/filename), 'w') as f:
-        yaml.dump(dictionary, f)
-
-
 def save_object_to_version(obj, version: int, filename: str, log_dir: str = 'logs', name: str = 'Unnamed'):
     save_path = Path(log_dir)/name/f'version_{version}'
     if isinstance(obj, dtypes.Figure):
@@ -58,6 +50,20 @@ def save_object_to_version(obj, version: int, filename: str, log_dir: str = 'log
 
 def calc_out_size(in_size, padding, kernel_size, dilation, stride):
     return ((in_size + 2*padding - dilation*(kernel_size-1) - 1) / stride) + 1
+
+
+class PathGlobber:
+    def __init__(self, path: str):
+        self.path = Path(path)
+
+    def glob(self, pattern: str):
+        return list(self.path.glob(pattern))
+
+    def multiglob(self, patterns: Iterable[str]):
+        list_of_paths = []
+        for pat in patterns:
+            list_of_paths.extend(self.path.glob(pat))
+        return list_of_paths
 
 
 def chw2hwc(x):
@@ -176,7 +182,7 @@ class BatchStatistics(object):
         return np.std(self.batch_in)
 
 
-class PreprocessingPipeline:
+class LunarAnaloguePreprocessingPipeline:
     """
     Standard image preprocessing pipeline for Lunar Analogue data.
     Cascades processing steps:
@@ -198,6 +204,7 @@ class PreprocessingPipeline:
 
         # To conduct histogram equalization you have to operate on the intensity
         # values of the image, so a different color space is required
+        # TODO: Evaluate the effects of training your model on iamges in YCrCb colour space
         image = cv.cvtColor(image, cv.COLOR_RGB2YCrCb)
         image[..., 0] = cv.equalizeHist(image[..., 0])
         image = cv.cvtColor(image, cv.COLOR_YCrCb2RGB)
@@ -215,19 +222,45 @@ class PreprocessingPipeline:
         return image
 
 
+class CuriosityPreprocessingPipeline:
+    """
+    Standard image preprocessing pipeline for Curiosity data.
+    Cascades processing steps:
+        1) Channelwise standardization
+    """
+
+    def __init__(self):
+        return
+
+    def __call__(self, image: np.ndarray) -> np.ndarray:
+        assert image.shape == (64, 64, 6), 'Dataset not in correct format for pre-processing'
+        n_channels = image.shape[-1]
+
+        # Convert image dtype to float
+        image = np.float32(image)
+
+        # Standardize image
+        for c in range(n_channels):
+            image[..., c] = (image[..., c] - image[..., c].mean()) / image[..., c].std()
+
+        return image
+
+
 if __name__ == '__main__':
-    from datasets.lunar_analogue import LunarAnalogueDataGenerator
+    p = PathGlobber('datasets/filename_list.json')
 
-    config = config_from_command_line('configs/incremental_pca.yaml')
-    data_obj = LunarAnalogueDataGenerator(config)
-    gen = data_obj.create_generator('train')
-
-    batch = next(gen)
-
-    bstat_obj = BatchStatistics(batch)
-    print(bstat_obj.mean)
-
+    # from datasets.lunar_analogue import LunarAnalogueDataGenerator
     #
+    # config = config_from_command_line('configs/incremental_pca.yaml')
+    # data_obj = LunarAnalogueDataGenerator(config)
+    # gen = data_obj.create_generator('train')
+    #
+    # batch = next(gen)
+    #
+    # bstat_obj = BatchStatistics(batch)
+    # print(bstat_obj.mean)
+    #
+    # #
     # fig = plt.figure()
     # ax1 = fig.add_subplot(211)
     # ax1.imshow(image)
