@@ -33,7 +33,7 @@ class CAEBaseModule(pl.LightningModule):
         batch_rc = self.forward(batch_in)
         loss = self.loss_function(batch_rc, batch_in)
 
-        self.log('train_loss', loss)
+        self.log('train_loss', loss, on_epoch=True)
         return {'loss': loss}  # The returned object must contain a 'loss' key
 
     def validation_step(self, batch, batch_nb):
@@ -43,7 +43,7 @@ class CAEBaseModule(pl.LightningModule):
         batch_rc = self.forward(batch_in)
         loss = self.loss_function(batch_rc, batch_in)
 
-        self.log('val_loss', loss)
+        self.log('val_loss', loss, on_epoch=True, prog_bar=True)
         return {'val_loss': loss}
 
     def test_step(self, batch, batch_nb):
