@@ -103,22 +103,6 @@ class VisualizationCallback(pl.callbacks.base.Callback):
                 'batch_rc': batch_rc
             }
             _handle_image_logging(images, pl_module)
-<<<<<<< HEAD
-
-
-class SimpleHyperparameterSaver(pl.callbacks.base.Callback):
-    def __init__(self, log_dir: str, name: str, filename: str):
-        self._log_dir = log_dir
-        self._name = name
-        self._filename = filename
-
-    def on_epoch_start(self, trainer, pl_module):
-        if pl_module.current_epoch == 2:
-            hps = {
-                'learning_rate': pl_module.lr,
-                'weight_decay_coefficient': pl_module.wd
-            }
-            tools.save_dictionary_to_current_version(self._log_dir, self._name, self._filename, hps)
 
 
 class AAEVisualization(pl.callbacks.base.Callback):
@@ -143,22 +127,3 @@ class AAEVisualization(pl.callbacks.base.Callback):
             }
             _handle_image_logging(images, pl_module)
 
-||||||| merged common ancestors
-
-
-class SimpleHyperparameterSaver(pl.callbacks.base.Callback):
-    def __init__(self, log_dir: str, name: str, filename: str):
-        self._log_dir = log_dir
-        self._name = name
-        self._filename = filename
-
-    def on_epoch_start(self, trainer, pl_module):
-        if pl_module.current_epoch == 2:
-            hps = {
-                'learning_rate': pl_module.lr,
-                'weight_decay_coefficient': pl_module.wd
-            }
-            tools.save_dictionary_to_current_version(self._log_dir, self._name, self._filename, hps)
-
-=======
->>>>>>> main
