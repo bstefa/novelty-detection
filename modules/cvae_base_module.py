@@ -59,40 +59,49 @@ class CVAEBaseModule(pl.LightningModule):
             optimizer_idx=optimizer_idx,
             batch_idx=batch_idx)
 
+        if batch_idx == 0:
+            self.sample_images(real_img[0], labels[0])
+
         return val_loss_dict
 
-    def validation_end(self, outputs):
-        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        self.log('avg_val_loss', avg_loss)
-        # self.sample_images()
-        return {'val_loss': avg_loss}
+    def validation_epoch_end(self, outputs):
+        avg_elbo_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        avg_recons_loss = torch.stack([x['reconstruction_loss'] for x in outputs]).mean()
+        avg_kld_loss = torch.stack([x['KLD'] for x in outputs]).mean()
 
-    def sample_images(self):
+        self.log('avg_elbo_loss', avg_elbo_loss)
+        self.log('avg_recons_loss', avg_recons_loss)
+        self.log('avg_kld_loss', avg_kld_loss)
+
+        pass
+
+    def sample_images(self, real_img: Tensor, label: Tensor):
         # Get sample reconstruction image
-        test_input, test_label = next(iter(self.dm.val_dataloader()))
-        test_input = test_input.to(self.curr_device)
-        test_label = test_label.to(self.curr_device)
-        recons = self.model.generate(test_input, labels=test_label)
 
-        vutils.save_image(recons.data,
-                          f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
-                          f"recons_{self.logger.name}_{self.current_epoch}.png",
-                          normalize=True,
-                          nrow=12)
+        test_input = torch.unsqueeze(real_img, 0)
+        recons = self.model.generate(test_input)
 
-        try:
-            samples = self.model.sample(144,
-                                        self.curr_device,
-                                        labels=test_label)
-            vutils.save_image(samples.cpu().data,
-                              f"{self.logger.save_dir}{self.logger.name}/version_{self.logger.version}/"
-                              f"{self.logger.name}_{self.current_epoch}.png",
+        if self.logger.version is not None:
+
+            vutils.save_image(recons.data,
+                              f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
+                              f"recons_{self.logger.name}_{self.current_epoch}.png",
                               normalize=True,
                               nrow=12)
-        except:
-            pass
 
-        del test_input, recons  # , samples
+            try:
+                samples = self.model.sample(144,
+                                            self.curr_device,
+                                            labels=test_label)
+                vutils.save_image(samples.cpu().data,
+                                  f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
+                                  f"{self.logger.name}_{self.current_epoch}.png",
+                                  normalize=True,
+                                  nrow=12)
+            except:
+                pass
+
+            del test_input, recons  # , samples
 
     @property
     def version(self):

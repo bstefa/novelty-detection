@@ -31,9 +31,6 @@ class VariationalAutoEncoder(nn.Module):
         self.fc_mu = nn.Linear(64 * 4 * 4, latent_dims)
         self.fc_var = nn.Linear(64 * 4 * 4, latent_dims)
 
-        # Build Decoder
-        modules = []
-
         # TODO: check input dims for decoder
         self.decoder_input = nn.Linear(latent_dims, 64 * 4 * 4)
 
@@ -60,7 +57,6 @@ class VariationalAutoEncoder(nn.Module):
         Receives an input image and outputs the mean and the logvar for the distribution q(z|x)
         """
         result = self.encoder(input)
-        print('ENCODER OUTPUT SHAPE:', result.shape)
         result = torch.flatten(result, start_dim=1)
 
         # Split the result into mu and var components

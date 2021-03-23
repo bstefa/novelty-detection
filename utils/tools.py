@@ -39,9 +39,15 @@ def config_from_file(config_file: str):
         y = yaml.full_load(f)
 
 
-def save_object_to_version(obj, version: int, filename: str, log_dir: str = 'logs', name: str = 'Unnamed'):
+def save_object_to_version(obj, 
+                           version: int, 
+                           filename: str, 
+                           log_dir: str='logs', 
+                           name: str='Unnamed', 
+                           datamodule: str='None'):
+
     save_path = Path(log_dir)/name/f'version_{version}'
-    if isinstance(obj, dtypes.Figure):
+    if isinstance(obj, Figure):
         obj.savefig(save_path/filename, format='eps')
     if isinstance(obj, dict):
         with open(str(save_path/filename), 'w') as f:
