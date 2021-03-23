@@ -25,13 +25,15 @@ class PCABaseModule(object):
         Uses the class's training and validation generator to iteratively fit/validate the PCA model.
         """
         novelty_scores = []
+
+        # Grab a batch from the training set
         for batch_nb, batch_tr_in in enumerate(self.dg.trainval_generator('train')):
             print(f'[BATCH {batch_nb}] Fitting...')
             self.model.partial_fit(self._flatten_batch(batch_tr_in))
 
             batch_novelty_scores = []
+            # Grab a batch from the validation set
             for batch_vl_in in self.dg.trainval_generator('val'):
-
                 batch_vl_rd = self.model.transform(self._flatten_batch(batch_vl_in))
                 batch_vl_rc = self.model.inverse_transform(batch_vl_rd).reshape(batch_vl_in.shape)
 
@@ -84,7 +86,6 @@ class PCABaseModule(object):
             if fast_dev_run > 0 and batch_nb == (fast_dev_run - 1):
                 break
 
-        # TODO: This is an ideal place to return a BatchStatistics object in the future
         return novelty_scores, novelty_labels
 
     def _flatten_batch(self, batch_in):
