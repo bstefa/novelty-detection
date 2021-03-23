@@ -15,7 +15,7 @@ experiment-parameters:
 data-parameters:
 
   # root_data_path (required, str): Path to the common directory node immediately before training and testing branches.
-  root_data_path: '/home/brahste/Datasets/toy'
+  root_data_path: '/home/fenrir/Documents/Datasets'
 
   # train_fraction (optional, float, default=0.8): Fraction of training samples to be used for
   # training, the rest will be used for validation. Set to null for default.
@@ -24,6 +24,9 @@ data-parameters:
   # batch_size (optional, int, default=8): Number of samples to be used in each iteration.
   # Set to null for default.
   batch_size: 128
+
+  # Download dataset flag
+  download: True
 
 
 # module-parameters: Contains hyperparameters used when training the model.
