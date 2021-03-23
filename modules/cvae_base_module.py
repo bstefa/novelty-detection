@@ -59,8 +59,9 @@ class CVAEBaseModule(pl.LightningModule):
             optimizer_idx=optimizer_idx,
             batch_idx=batch_idx)
 
-        if batch_idx == 0:
-            self.sample_images(real_img[0], labels[0])
+        if batch_idx == 0 and self.version is not None:
+            index = torch.randint(len(real_img), (1,1)).numpy()
+            self.sample_images(real_img[index], labels[index])
 
         return val_loss_dict
 
@@ -78,30 +79,32 @@ class CVAEBaseModule(pl.LightningModule):
     def sample_images(self, real_img: Tensor, label: Tensor):
         # Get sample reconstruction image
 
-        test_input = torch.unsqueeze(real_img, 0)
-        recons = self.model.generate(test_input)
+        recons = self.model.generate(real_img)
+        grid = torch.cat((real_img, recons.data))
 
-        if self.logger.version is not None:
+        print(grid.shape)
+        print(recons.shape)
+        print(recons.data.shape)
 
-            vutils.save_image(recons.data,
+        vutils.save_image(grid,
+                          f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
+                          f"recons_{self.logger.name}_{self.current_epoch}.png",
+                          normalize=True,
+                          nrow=1)
+
+        try:
+            samples = self.model.sample(144,
+                                        self.curr_device,
+                                        labels=test_label)
+            vutils.save_image(samples.cpu().data,
                               f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
-                              f"recons_{self.logger.name}_{self.current_epoch}.png",
+                              f"{self.logger.name}_{self.current_epoch}.png",
                               normalize=True,
                               nrow=12)
+        except:
+            pass
 
-            try:
-                samples = self.model.sample(144,
-                                            self.curr_device,
-                                            labels=test_label)
-                vutils.save_image(samples.cpu().data,
-                                  f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
-                                  f"{self.logger.name}_{self.current_epoch}.png",
-                                  normalize=True,
-                                  nrow=12)
-            except:
-                pass
-
-            del test_input, recons  # , samples
+        del recons
 
     @property
     def version(self):
