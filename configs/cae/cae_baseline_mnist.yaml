@@ -2,20 +2,21 @@
 experiment-parameters:
 
   # name (required, str): The name of the experiment. Typically best to align with the model being used.
-  name: 'ReferenceCAE'
+  name: 'CAEBaseline'
 
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
 
   # datamodule (required, str): The datamodule (or datagenerator) to use for your experiment.
-  datamodule: 'CuriosityDataModule'
+  datamodule: 'NoveltyMNISTDataModule'
+
 
 # data-parameters: Contains information used for preparing and loading the data.
 data-parameters:
 
   # root_data_path (required, str): Path to the common directory node immediately before training and testing branches.
   # ensure that this path matches the datamodule specified in the experiment-parameters.
-  root_data_path: '/home/brahste/Datasets/MarsNovelty-JPL'
+  root_data_path: '/home/brahste/Datasets/NoveltyMNIST'
 
   # train_fraction (optional, float, default=0.8): Fraction of training samples to be used for
   # training, the rest will be used for validation. Set to null for default.
@@ -23,7 +24,7 @@ data-parameters:
 
   # batch_size (optional, int, default=8): Number of samples to be used in each iteration.
   # Set to null for default.
-  batch_size: null
+  batch_size: 256
 
 
 # module-parameters: Contains hyperparameters used when training the model.
@@ -35,4 +36,4 @@ module-parameters:
 
   # weight_decay_coefficient (optional, float, default=0.01): Scaling factor for loss regularization term.
   # Set to null for default.
-  weight_decay_coefficient: 0.001
+  weight_decay_coefficient: 0.1
