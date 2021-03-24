@@ -2,13 +2,13 @@
 # sys.path.append('.')
 
 import torch
+import os
 import pytorch_lightning as pl
 
 from models.simple_aae import SimpleAAE
 from datasets import supported_datamodules
 from modules.aae_base_module import AAEBaseModule
 from utils import tools, callbacks
-from torchsummary import summary
 from functools import reduce
 
 
@@ -23,7 +23,7 @@ def main():
 
     # Initialize datamodule
     print('[INFO] Initializing datamodule..')
-    datamodule = supported_datamodules[data_params['datamodule']](**data_params)
+    datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
     datamodule.prepare_data()
     datamodule.setup('train')
 
@@ -42,9 +42,9 @@ def main():
 
     # Initialize loggers to monitor training and validation
     print('[INFO] Initializing logger..')
-    logger = pl.loggers.TestTubeLogger(
+    logger = pl.loggers.TensorBoardLogger(
         exp_params['log_dir'],
-        name=exp_params['name'])
+        name=os.path.join(exp_params['name'], exp_params['datamodule'])
 
     # Initialize the Trainer object
     print('[INFO] Initializing trainer..')

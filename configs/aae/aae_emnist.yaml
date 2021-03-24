@@ -7,11 +7,11 @@ experiment-parameters:
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
 
+  # datamodule (required, str): The datamodule (or datagenerator) to use for your experiment.
+  datamodule: 'EMNISTDataModule'
+
 # data-parameters: Contains information used for preparing and loading the data.
 data-parameters:
-
-  # datamodule (required, str): The datamodule (or datagenerator) to use for your experiment.
-  datamodule: 'emnist-datamodule'
 
   # root_data_path (required, str): Path to the common directory node immediately before training and testing branches.
   root_data_path: '/home/brahste/Datasets/toy'
