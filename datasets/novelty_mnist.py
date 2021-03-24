@@ -70,7 +70,7 @@ class NoveltyMNISTDataModule(BaseDataModule):
                 train=True,
                 data_transforms=self._data_transforms)
 
-            train_size = int(torch.floor(len(trainval_set) * self._train_fraction))
+            train_size = int(len(trainval_set) * self._train_fraction)
             val_size = len(trainval_set) - train_size
             # Since setup is called from every process, setting state here is okay
             self._train_set, self._val_set = torch.utils.data.random_split(trainval_set, [train_size, val_size])
@@ -88,16 +88,19 @@ class NoveltyMNISTDataModule(BaseDataModule):
         return torch.utils.data.DataLoader(
             self._train_set,
             batch_size=self._batch_size,
+            drop_last=True,
             num_workers=8)
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
             self._val_set,
             batch_size=self._batch_size,
+            drop_last=True,
             num_workers=8)
 
     def test_dataloader(self):
         return torch.utils.data.DataLoader(
             self._test_set,
             batch_size=self._batch_size,
+            drop_last=True,
             num_workers=8)

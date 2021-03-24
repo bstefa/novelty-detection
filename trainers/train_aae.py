@@ -1,11 +1,12 @@
 import torch
+import os
 import pytorch_lightning as pl
 
-from models.cvae import VariationalAutoEncoder
+from models.aae_simple import SimpleAAE
 from datasets import supported_datamodules
-from modules.cvae_base_module import CVAEBaseModule
-from utils import tools
-from torchsummary import summary
+from modules.aae_base_module import AAEBaseModule
+from utils import tools, callbacks
+from functools import reduce
 
 
 def main():
@@ -25,14 +26,11 @@ def main():
 
     # Initialize model
     print('[INFO] Initializing model..')
-    model = VariationalAutoEncoder(datamodule.shape, **module_params)
-
-    # View a summary of the model
-    summary(model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')), datamodule.shape)
+    model = SimpleAAE(reduce(lambda x, y: x*y, datamodule.shape), **module_params)
 
     # Initialize module
     print('[INFO] Initializing module..')
-    module = CVAEBaseModule(
+    module = AAEBaseModule(
         model,
         train_size=datamodule.train_size,
         val_size=datamodule.val_size,
@@ -41,11 +39,9 @@ def main():
 
     # Initialize loggers to monitor training and validation
     print('[INFO] Initializing logger..')
-    logger = pl.loggers.TestTubeLogger(
+    logger = pl.loggers.TensorBoardLogger(
         exp_params['log_dir'],
-        name=exp_params['name'],
-        debug=False,
-        create_git_tag=False)
+        name=os.path.join(exp_params['name'], exp_params['datamodule']))
 
     # Initialize the Trainer object
     print('[INFO] Initializing trainer..')
@@ -56,26 +52,19 @@ def main():
         max_epochs=100,
         check_val_every_n_epoch=1,
         callbacks=[
-            pl.callbacks.early_stopping.EarlyStopping(monitor='loss', patience=5)
+            pl.callbacks.early_stopping.EarlyStopping(monitor='val_r_loss', patience=5),
+            pl.callbacks.ModelCheckpoint(monitor='val_r_loss', filename='{val_r_loss:.2f}-{epoch}', save_last=True),
+            callbacks.AAEVisualization()
         ])
-
-    # Find learning rate
-    if module_params['learning_rate'] == 'auto':
-        lr_finder = trainer.tuner.lr_find(module, datamodule)
-        module.lr = lr_finder.suggestion()
-        print('[INFO] Using learning rate: ', module.lr)
-        lr_finder_fig = lr_finder.plot(suggest=True, show=False)
 
     # Train the model
     print('[INFO] Training model...')
     trainer.fit(module, datamodule)
 
     # Some final saving once training is complete
-    if 'lr_finder_fig' in locals():
-        tools.save_object_to_version(lr_finder_fig, version=module.version, filename='lr-find.eps', **exp_params)
     tools.save_object_to_version(config, version=module.version, filename='configuration.yaml', **exp_params)
 
 
 if __name__ == '__main__':
-    DEFAULT_CONFIG_FILE = 'configs/cvae/cvae_emnist.yaml'
+    DEFAULT_CONFIG_FILE = 'configs/aae/aae_simple_mnist.yaml'
     main()

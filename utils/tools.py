@@ -83,10 +83,14 @@ def unstandardize_batch(batch_in: torch.Tensor, tol: float = 0.01):
         # Clone batch and detach from the computational graph
         batch = batch_in.detach().clone().to(device='cpu')
 
-        # Convert pixel range for each image in the batch
-        for b in range(len(batch)):
-            extremum = torch.max(torch.abs(batch[b]))
-            batch[b] = (batch[b] / (2 * extremum)) + 0.5
+        if torch.min(batch) >= 0.:
+            for b in range(len(batch)):
+                batch[b] = batch[b] / torch.max(batch[b])
+        else:
+            # Convert pixel range for each image in the batch
+            for b in range(len(batch)):
+                extremum = torch.max(torch.abs(batch[b]))
+                batch[b] = (batch[b] / (2 * extremum)) + 0.5
 
         # Some basic assertions to ensure correct range manipulation
         assert torch.max(batch) < (1.0 + tol), f'The maximum pixel intensity ({torch.max(batch)}) is out of range'
@@ -126,8 +130,8 @@ def get_error_map(x_input, x_output, tol: float = 0.001):
             raise ValueError('Input to error_map must be of shape 3 or 4')
 
         # Some basic assertions to ensure correct range manipulation
-        assert torch.max(x_err) < (1.0 + tol), 'The maximum pixel intensity is out of range'
-        assert torch.min(x_err) > (0.0 - tol), 'The minimum pixel intensity is out of range'
+        assert torch.max(x_err) < (1.0 + tol), f'The maximum pixel intensity {torch.max(x_err)} is out of range'
+        assert torch.min(x_err) > (0.0 - tol), f'The minimum pixel intensity {torch.min(x_err)} is out of range'
         return x_err
     if isinstance(x_output, np.ndarray):
         x_err = x_input - x_output
@@ -142,7 +146,7 @@ def gaussian_window(mean, std):
 
 
 # INCOMPLETE: DO NOT USE
-class BatchStatistics(object):
+class BatchStatistics:
     '''
     Evaluates statistics on input batch, accessible as member functions
     for easy, on the fly access.

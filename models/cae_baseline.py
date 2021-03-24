@@ -9,14 +9,14 @@ class EncodingBlock(nn.Module):
     ):
         super(EncodingBlock, self).__init__()
         self.conv = nn.Conv2d(in_chans, out_chans, kernel_size=kernel_size, padding=padding, **kwargs)
-        self.activation = nn.LeakyReLU(negative_slope=leak)
         self.drop = nn.Dropout2d(p=drop_prob)
+        self.activation = nn.LeakyReLU(negative_slope=leak)
         self.bn = nn.BatchNorm2d(out_chans)
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.activation(x)
         x = self.drop(x)
+        x = self.activation(x)
         x = self.bn(x)
         return x
 
@@ -29,14 +29,14 @@ class DecodingBlock(nn.Module):
     ):
         super(DecodingBlock, self).__init__()
         self.transconv = nn.ConvTranspose2d(in_chans, out_chans, kernel_size=kernel_size, padding=padding, **kwargs)
-        self.activation = nn.LeakyReLU(leak)
         self.drop = nn.Dropout2d(drop_prob)
+        self.activation = nn.LeakyReLU(leak)
         self.bn = nn.BatchNorm2d(out_chans)
 
     def forward(self, x):
         x = self.transconv(x)
-        x = self.activation(x)
         x = self.drop(x)
+        x = self.activation(x)
         x = self.bn(x)
         return x
 
