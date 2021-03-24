@@ -13,6 +13,15 @@ import pytorch_lightning as pl
 from utils import tools
 
 
+def learning_rate_finder(trainer, module, datamodule):
+    lr_finder = trainer.tuner.lr_find(module, datamodule)
+    suggested_lr = lr_finder.suggestion()
+    lr_finder_fig = lr_finder.plot(suggest=True, show=False)
+
+    print('[INFO] Using learning rate: ', suggested_lr)
+    return suggested_lr, lr_finder_fig
+
+
 def _log_to_tensorboard(result: dict, compute: dict, pl_module):
     pl_module.logger.experiment.add_image(
         f'batch_in-{pl_module.global_step}',
@@ -103,3 +112,6 @@ class VisualizationCallback(pl.callbacks.base.Callback):
                 'batch_rc': batch_rc
             }
             _handle_image_logging(images, pl_module)
+
+
+
