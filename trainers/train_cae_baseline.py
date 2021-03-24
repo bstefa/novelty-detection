@@ -30,7 +30,6 @@ def main():
     datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
     datamodule.prepare_data()
     datamodule.setup('train')
-    print(datamodule.shape)
 
     # Initialize model with the number of channels in the data (note that torch uses
     # the convention of shaping data as [C, H, W] as opposed to the usual [H, W, C]

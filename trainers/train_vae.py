@@ -23,7 +23,6 @@ def main():
     datamodule.prepare_data()
     datamodule.setup('train')
 
-
     # Initialize model
     print('[INFO] Initializing model..')
     model = VariationalAutoEncoder(datamodule.shape, **module_params)
