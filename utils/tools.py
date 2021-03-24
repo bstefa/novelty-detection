@@ -12,6 +12,7 @@ from pathlib import Path
 from pprint import pprint
 
 from utils.dtypes import *
+from utils import dtypes
 
 
 def config_from_command_line(default_config: str):
@@ -39,8 +40,8 @@ def config_from_file(config_file: str):
         y = yaml.full_load(f)
 
 
-def save_object_to_version(obj, version: int, filename: str, log_dir: str = 'logs', name: str = 'Unnamed'):
-    save_path = Path(log_dir)/name/f'version_{version}'
+def save_object_to_version(obj, version: int, filename: str, log_dir: str = 'logs', name: str = 'Unnamed', datamodule: str = 'Unknown'):
+    save_path = Path(log_dir)/name/datamodule/f'version_{version}'
     if isinstance(obj, dtypes.Figure):
         obj.savefig(save_path/filename, format='eps')
     if isinstance(obj, dict):

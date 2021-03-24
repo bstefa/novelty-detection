@@ -14,7 +14,7 @@ experiment-parameters:
 data-parameters:
 
   # root_data_path (required, str): Path to the common directory node immediately before training and testing branches.
-  root_data_path: '/home/brahste/Datasets/LunarAnalogue'
+  root_data_path: '/home/brahste/Datasets/LunarAnalogue/nov-labelled'
 
   # glob_pattern_train (optional, str): Regular expression for globbing training and validation samples.
   glob_pattern_train: null
