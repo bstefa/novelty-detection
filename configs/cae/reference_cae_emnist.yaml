@@ -23,7 +23,9 @@ data-parameters:
 
   # batch_size (optional, int, default=8): Number of samples to be used in each iteration.
   # Set to null for default.
-  batch_size: 32
+  batch_size: 256
+
+  download: false
 
 
 # module-parameters: Contains hyperparameters used when training the model.

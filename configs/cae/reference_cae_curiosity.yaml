@@ -15,7 +15,7 @@ data-parameters:
 
   # root_data_path (required, str): Path to the common directory node immediately before training and testing branches.
   # ensure that this path matches the datamodule specified in the experiment-parameters.
-  root_data_path: '/home/brahste/Datasets/MarsNovelty-JPL'
+  root_data_path: '/home/brahste/Datasets/MartianCuriosity'
 
   # train_fraction (optional, float, default=0.8): Fraction of training samples to be used for
   # training, the rest will be used for validation. Set to null for default.
@@ -23,7 +23,7 @@ data-parameters:
 
   # batch_size (optional, int, default=8): Number of samples to be used in each iteration.
   # Set to null for default.
-  batch_size: null
+  batch_size: 128
 
 
 # module-parameters: Contains hyperparameters used when training the model.
