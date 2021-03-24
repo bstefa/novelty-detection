@@ -1,11 +1,8 @@
-# import sys
-# sys.path.append('.')
-
 import torch
 import os
 import pytorch_lightning as pl
 
-from models.simple_aae import SimpleAAE
+from models.aae_simple import SimpleAAE
 from datasets import supported_datamodules
 from modules.aae_base_module import AAEBaseModule
 from utils import tools, callbacks
@@ -44,7 +41,7 @@ def main():
     print('[INFO] Initializing logger..')
     logger = pl.loggers.TensorBoardLogger(
         exp_params['log_dir'],
-        name=os.path.join(exp_params['name'], exp_params['datamodule'])
+        name=os.path.join(exp_params['name'], exp_params['datamodule']))
 
     # Initialize the Trainer object
     print('[INFO] Initializing trainer..')
@@ -69,5 +66,5 @@ def main():
 
 
 if __name__ == '__main__':
-    DEFAULT_CONFIG_FILE = 'configs/aae/aae_emnist.yaml'
+    DEFAULT_CONFIG_FILE = 'configs/aae/aae_simple_mnist.yaml'
     main()
