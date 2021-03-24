@@ -56,13 +56,16 @@ def main():
             callbacks.VisualizationCallback()
         ]
     )
-    # Find learning rate
+    # Find learning rate and set values
     if module_params['learning_rate'] is None:
-        lr_finder = trainer.tuner.lr_find(module, datamodule)
-        module.lr = lr_finder.suggestion()
-        print('[INFO] Using learning rate: ', module.lr)
-        config['module-parameters']['learning_rate'] = module.lr  # Replace 'auto' with actual learning rate
-        lr_finder_fig = lr_finder.plot(suggest=True, show=False)
+        lr, lr_finder_fig = callbacks.learning_rate_finder(trainer, module, datamodule)
+        module.lr = lr
+        config['module-parameters']['learning_rate'] = module.lr
+        # lr_finder = trainer.tuner.lr_find(module, datamodule)
+        # module.lr = lr_finder.suggestion()
+        # print('[INFO] Using learning rate: ', module.lr)
+        # config['module-parameters']['learning_rate'] = module.lr  # Replace 'auto' with actual learning rate
+        # lr_finder_fig = lr_finder.plot(suggest=True, show=False)
 
     # Train the model
     trainer.fit(module, datamodule)
