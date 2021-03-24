@@ -4,7 +4,7 @@ import torch
 from typing import Optional
 from utils import tools
 
-from .base_datamodule import BaseDataModule
+from datasets.base import BaseDataModule
 
 
 class NoveltyMNISTDataset(torch.utils.data.Dataset):

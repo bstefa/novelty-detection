@@ -19,7 +19,7 @@ Created: Mar. 18, 2021
 import torch
 import numpy as np
 
-from datasets.base_datamodule import BaseDataModule
+from datasets.base import BaseDataModule
 from torchvision import transforms
 from utils import tools
 
