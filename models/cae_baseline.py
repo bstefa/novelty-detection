@@ -41,14 +41,13 @@ class DecodingBlock(nn.Module):
         return x
 
 
-class ReferenceCAE(nn.Module):
-    def __init__(self, in_shape: int):
-        super(ReferenceCAE, self).__init__()
-        c = in_shape[0]  # Extract the channels
+class BaselineCAE(nn.Module):
+    def __init__(self, in_chans: int):
+        super().__init__()
 
         # Encoding layers
         self.encoder = nn.Sequential(
-            EncodingBlock(c, 24),
+            EncodingBlock(in_chans, 24),
             EncodingBlock(24, 48),
             EncodingBlock(48, 48, stride=2),
             EncodingBlock(48, 24),
@@ -65,7 +64,7 @@ class ReferenceCAE(nn.Module):
             DecodingBlock(24, 48),
             DecodingBlock(48, 48, stride=2, output_padding=1),
             DecodingBlock(48, 24),
-            nn.Conv2d(24, c, kernel_size=5, padding=2),
+            nn.Conv2d(24, in_chans, kernel_size=5, padding=2),
             nn.Tanh()  # Same size as input
         )
 

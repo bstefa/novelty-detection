@@ -7,14 +7,14 @@ Uses:
     Module: CAEBaseModule
     Model: ReferenceCAE
     Dataset: LunarAnalogueDataGenerator
-    Configuration: reference_cae_lunar_analogue.yaml
+    Configuration: cae_baseline_lunar_analogue.yaml
 """
 import os
 import pytorch_lightning as pl
 
 from utils import tools, callbacks
 from modules.cae_base_module import CAEBaseModule
-from models.reference_cae import ReferenceCAE
+from models.cae_baseline import BaselineCAE
 from datasets import supported_datamodules
 
 
@@ -30,11 +30,10 @@ def main():
     datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
     datamodule.prepare_data()
     datamodule.setup('train')
-    print(datamodule.shape)
 
     # Initialize model with the number of channels in the data (note that torch uses
     # the convention of shaping data as [C, H, W] as opposed to the usual [H, W, C]
-    model = ReferenceCAE(in_shape=datamodule.shape)
+    model = BaselineCAE(in_chans=datamodule.shape[0])
 
     # Initialize experimental module
     module = CAEBaseModule(model, **module_params)
@@ -72,5 +71,5 @@ def main():
 
 
 if __name__ == '__main__':
-    DEFAULT_CONFIG_FILE = 'configs/cae/reference_cae_lunar_analogue.yaml'
+    DEFAULT_CONFIG_FILE = 'configs/cae/cae_baseline_lunar_analogue.yaml'
     main()

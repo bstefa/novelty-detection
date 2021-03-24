@@ -2,7 +2,7 @@
 experiment-parameters:
 
   # name (required, str): The name of the experiment. Typically best to align with the model being used.
-  name: 'ReferenceCAE'
+  name: 'CAEBaseline'
 
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'

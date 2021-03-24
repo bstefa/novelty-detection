@@ -209,7 +209,7 @@ class LunarAnaloguePreprocessingPipeline:
 
         # To conduct histogram equalization you have to operate on the intensity
         # values of the image, so a different color space is required
-        # TODO: Evaluate the effects of training your model on iamges in YCrCb colour space
+        # TODO: Evaluate the effects of training your model on images in YCrCb colour space
         image = cv.cvtColor(image, cv.COLOR_RGB2YCrCb)
         image[..., 0] = cv.equalizeHist(image[..., 0])
         image = cv.cvtColor(image, cv.COLOR_YCrCb2RGB)
@@ -247,6 +247,28 @@ class CuriosityPreprocessingPipeline:
         # Standardize image
         for c in range(n_channels):
             image[..., c] = (image[..., c] - image[..., c].mean()) / image[..., c].std()
+
+        return image
+
+
+class NoveltyMNISTPreprocessingPipeline:
+    """
+    Standard image preprocessing pipeline for Curiosity data.
+    Cascades processing steps:
+        1) Channelwise standardization
+    """
+
+    def __init__(self):
+        return
+
+    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+        assert image.shape == (1, 28, 28), 'Dataset not in correct format for pre-processing'
+
+        # Convert image dtype to float
+        image = image.to(dtype=torch.float32)
+
+        # Standardize image
+        image = (image - image.mean()) / image.std()
 
         return image
 
