@@ -8,7 +8,7 @@ experiment-parameters:
   log_dir: 'logs'
 
   # datamodule (required, str): The datamodule (or datagenerator) to use for your experiment.
-  datamodule: 'emnist-datamodule'
+  datamodule: 'EMNISTDataModule'
 
 # data-parameters: Contains information used for preparing and loading the data.
 data-parameters:
@@ -23,7 +23,9 @@ data-parameters:
 
   # batch_size (optional, int, default=8): Number of samples to be used in each iteration.
   # Set to null for default.
-  batch_size: 32
+  batch_size: 256
+
+  download: false
 
 
 # module-parameters: Contains hyperparameters used when training the model.

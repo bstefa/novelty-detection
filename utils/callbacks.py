@@ -13,6 +13,15 @@ import pytorch_lightning as pl
 from utils import tools
 
 
+def learning_rate_finder(trainer, module, datamodule):
+    lr_finder = trainer.tuner.lr_find(module, datamodule)
+    suggested_lr = lr_finder.suggestion()
+    lr_finder_fig = lr_finder.plot(suggest=True, show=False)
+
+    print('[INFO] Using learning rate: ', suggested_lr)
+    return suggested_lr, lr_finder_fig
+
+
 def _log_to_tensorboard(result: dict, compute: dict, pl_module):
     pl_module.logger.experiment.add_image(
         f'batch_in-{pl_module.global_step}',
@@ -69,20 +78,18 @@ def _log_images(compute: dict, pl_module):
 
 
 def _handle_image_logging(images: dict, pl_module):
-    if pl_module.logger.version is None:
-        return
-    else:
-        batch_in_01 = tools.unstandardize_batch(images['batch_in'])
-        batch_rc_01 = tools.unstandardize_batch(images['batch_rc'])
-        compute = {
-            'batch_in_01': batch_in_01,
-            'batch_rc_01': batch_rc_01,
-            'error_map': tools.get_error_map(batch_in_01, batch_rc_01)
-        }
+    assert pl_module.logger.version is not None, 'Logging cannot proceed without a verison number.'
 
-        _log_to_tensorboard(images, compute, pl_module)
-        _log_images(compute, pl_module)
-    return
+    batch_in_01 = tools.unstandardize_batch(images['batch_in'])
+    batch_rc_01 = tools.unstandardize_batch(images['batch_rc'])
+    compute = {
+        'batch_in_01': batch_in_01,
+        'batch_rc_01': batch_rc_01,
+        'error_map': tools.get_error_map(batch_in_01, batch_rc_01)
+    }
+
+    _log_to_tensorboard(images, compute, pl_module)
+    _log_images(compute, pl_module)
 
 
 class VisualizationCallback(pl.callbacks.base.Callback):
@@ -96,27 +103,18 @@ class VisualizationCallback(pl.callbacks.base.Callback):
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if self._save_at_train_step == pl_module.global_step:
             batch_in, _ = batch
+            batch_in.detach_()
             batch_rc = pl_module.forward(batch_in.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
+            if trainer.datamodule.name == 'CuriosityDataModule':
+                batch_in = batch_in[:, [2, 0, 1]]
+                batch_rc = batch_rc[:, [2, 0, 1]]
             images = {
-                'batch_in': batch_in.detach(),  # Tensor
-                'batch_rc': batch_rc.detach()  # Tensor
+                'batch_in': batch_in,
+                'batch_rc': batch_rc
             }
             _handle_image_logging(images, pl_module)
 
 
-class SimpleHyperparameterSaver(pl.callbacks.base.Callback):
-    def __init__(self, log_dir: str, name: str, filename: str):
-        self._log_dir = log_dir
-        self._name = name
-        self._filename = filename
-
-    def on_epoch_start(self, trainer, pl_module):
-        if pl_module.current_epoch == 2:
-            hps = {
-                'learning_rate': pl_module.lr,
-                'weight_decay_coefficient': pl_module.wd
-            }
-            tools.save_dictionary_to_current_version(self._log_dir, self._name, self._filename, hps)
 
 
 class AAEVisualization(pl.callbacks.base.Callback):
