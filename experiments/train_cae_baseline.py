@@ -7,14 +7,14 @@ Uses:
     Module: CAEBaseModule
     Model: ReferenceCAE
     Dataset: LunarAnalogueDataGenerator
-    Configuration: reference_cae_lunar_analogue.yaml
+    Configuration: cae_baseline_lunar_analogue.yaml
 """
 import os
 import pytorch_lightning as pl
 
 from utils import tools, callbacks
 from modules.cae_base_module import CAEBaseModule
-from models.reference_cae import ReferenceCAE
+from models.cae_baseline import BaselineCAE
 from datasets import supported_datamodules
 
 
@@ -34,7 +34,7 @@ def main():
 
     # Initialize model with the number of channels in the data (note that torch uses
     # the convention of shaping data as [C, H, W] as opposed to the usual [H, W, C]
-    model = ReferenceCAE(in_shape=datamodule.shape)
+    model = BaselineCAE(in_chans=datamodule.shape[0])
 
     # Initialize experimental module
     module = CAEBaseModule(model, **module_params)
@@ -61,11 +61,6 @@ def main():
         lr, lr_finder_fig = callbacks.learning_rate_finder(trainer, module, datamodule)
         module.lr = lr
         config['module-parameters']['learning_rate'] = module.lr
-        # lr_finder = trainer.tuner.lr_find(module, datamodule)
-        # module.lr = lr_finder.suggestion()
-        # print('[INFO] Using learning rate: ', module.lr)
-        # config['module-parameters']['learning_rate'] = module.lr  # Replace 'auto' with actual learning rate
-        # lr_finder_fig = lr_finder.plot(suggest=True, show=False)
 
     # Train the model
     trainer.fit(module, datamodule)
@@ -77,5 +72,5 @@ def main():
 
 
 if __name__ == '__main__':
-    DEFAULT_CONFIG_FILE = 'configs/cae/reference_cae_lunar_analogue.yaml'
+    DEFAULT_CONFIG_FILE = 'configs/cae/cae_baseline_lunar_analogue.yaml'
     main()
