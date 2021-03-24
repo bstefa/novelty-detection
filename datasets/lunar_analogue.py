@@ -1,11 +1,9 @@
 # Datasets used in Novelty detection experiments
 # Author: Braden Stefanuk
 # Created: Dec 17, 2020
-from abc import ABC
 
 import torch
 import numpy as np
-import pytorch_lightning as pl
 
 from pathlib import Path
 from torchvision import transforms
@@ -27,7 +25,7 @@ class LunarAnalogueDataset(torch.utils.data.Dataset):
             train: bool = True,
             data_transforms=None
     ):
-        super(LunarAnalogueDataset, self).__init__()
+        super().__init__()
         # We handle the training and testing data with various glob patterns, this helps
         # adapt and implement alternative labelling schemes.
         self._list_of_image_paths = list(Path(root_data_path).glob(glob_pattern))
@@ -47,10 +45,11 @@ class LunarAnalogueDataset(torch.utils.data.Dataset):
         return image, torch.tensor(self.get_label(idx))
 
     def get_label(self, idx: int):
+        path_string = str(self._list_of_image_paths[idx])
 
-        if 'typical/' in str(self._list_of_image_paths[idx]):
+        if 'typical' in path_string or 'train' in path_string:
             return 0
-        elif 'novel/' in str(self._list_of_image_paths[idx]):
+        elif 'novel' in path_string:
             return 1
         else:
             raise ValueError('Cannot find typical/ or novel/ in file path')
@@ -74,13 +73,13 @@ class LunarAnalogueDataModule(BaseDataModule):
         self._root_data_path = root_data_path
 
         self._data_transforms = transforms.Compose([
-            tools.PreprocessingPipeline(),
+            tools.LunarAnaloguePreprocessingPipeline(),
             transforms.ToTensor(),
         ])
 
         # Handle the default and optionally passed additional kwargs
-        self._glob_pattern_train = '**/nov-labelled/trainval/*.jpeg'
-        self._glob_pattern_test = '**/nov-labelled/test/**/*.jpeg'
+        self._glob_pattern_train = 'trainval/*.jpeg'
+        self._glob_pattern_test = 'test/**/*.jpeg'
         for key in kwargs:
             if key == 'glob_pattern_train' and kwargs[key] is not None:
                 self._glob_pattern_train = kwargs[key]
@@ -105,13 +104,10 @@ class LunarAnalogueDataModule(BaseDataModule):
                 data_transforms=self._data_transforms
             )
             # Since setup is called from every process, setting state here is okay
-            self.train_size = int(np.floor(len(trainval_set) * self._train_fraction))
-            self.val_size = len(trainval_set) - self.train_size
+            train_size = int(np.floor(len(trainval_set) * self._train_fraction))
+            val_size = len(trainval_set) - train_size
 
-            self._train_set, self._val_set = torch.utils.data.random_split(
-                trainval_set,
-                [self.train_size, self.val_size]
-            )
+            self._train_set, self._val_set = torch.utils.data.random_split(trainval_set, [train_size, val_size])
 
         if stage == 'test' or stage is None:
             # Setup testing data as well
