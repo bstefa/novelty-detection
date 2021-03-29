@@ -2,7 +2,7 @@
 experiment-parameters:
 
   # name (required, str): The name of the experiment. Typically best to align with the model being used.
-  name: 'ReferenceCAE'
+  name: 'AAESimple'
 
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
@@ -14,7 +14,8 @@ experiment-parameters:
 data-parameters:
 
   # root_data_path (required, str): Path to the common directory node immediately before training and testing branches.
-  root_data_path: '/home/brahste/Datasets/LunarAnalogue'
+  # ensure that this path matches the datamodule specified in the experiment-parameters.
+  root_data_path: '/home/brahste/Datasets/LunarAnalogue/nov-labelled'
 
   # glob_pattern_train (optional, str): Regular expression for globbing training and validation samples.
   glob_pattern_train: null
@@ -28,17 +29,19 @@ data-parameters:
 
   # batch_size (optional, int, default=8): Number of samples to be used in each iteration.
   # Set to null for default.
-  batch_size: 32
+  batch_size: 16
 
 
 # module-parameters: Contains hyperparameters used when training the model.
 module-parameters:
 
   # learning_rate (optional, float, default='auto'): Scaling factor for gradient descent step.
-  # Set to null for default.
-  learning_rate: null
+  # Set to 'auto' for default.
+  learning_rate: 0.0001
 
   # weight_decay_coefficient (optional, float, default=0.01): Scaling factor for loss regularization term.
   # Set to null for default.
-  weight_decay_coefficient: 0.1
+  weight_decay_coefficient: 0.001
 
+  # latent_dims (required, int): Number of dimensions to use in the latent space of the VAE
+  latent_dims: 10

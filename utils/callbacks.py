@@ -13,6 +13,15 @@ import pytorch_lightning as pl
 from utils import tools
 
 
+def learning_rate_finder(trainer, module, datamodule):
+    lr_finder = trainer.tuner.lr_find(module, datamodule)
+    suggested_lr = lr_finder.suggestion()
+    lr_finder_fig = lr_finder.plot(suggest=True, show=False)
+
+    print('[INFO] Using learning rate: ', suggested_lr)
+    return suggested_lr, lr_finder_fig
+
+
 def _log_to_tensorboard(result: dict, compute: dict, pl_module):
     pl_module.logger.experiment.add_image(
         f'batch_in-{pl_module.global_step}',
@@ -69,15 +78,17 @@ def _log_images(compute: dict, pl_module):
 
 
 def _handle_image_logging(images: dict, pl_module) -> None:
-
     assert pl_module.logger.version is not None, 'Logging cannot proceed without a verison number.'
+
     batch_in_01 = tools.unstandardize_batch(images['batch_in'])
     batch_rc_01 = tools.unstandardize_batch(images['batch_rc'])
+
     compute = {
         'batch_in_01': batch_in_01,
         'batch_rc_01': batch_rc_01,
         'error_map': tools.get_error_map(batch_in_01, batch_rc_01)
     }
+
     _log_to_tensorboard(images, compute, pl_module)
     _log_images(compute, pl_module)
 
@@ -116,14 +127,8 @@ class AAEVisualization(pl.callbacks.base.Callback):
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if self._save_at_train_step == pl_module.global_step:
             batch_in, _ = batch
+            batch_in.detach_()
             image_shape = batch_in.shape
 
             batch_in = batch_in.view(image_shape[0], -1)
             batch_rc = pl_module.decoder(pl_module.encoder(batch_in.to(pl_module.device)))
-
-            images = {
-                'batch_in': batch_in.detach().view(*image_shape).transpose(2, 3),
-                'batch_rc': batch_rc.detach().view(*image_shape).transpose(2, 3)
-            }
-            _handle_image_logging(images, pl_module)
-

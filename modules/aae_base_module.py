@@ -26,11 +26,11 @@ class AAEBaseModule(pl.LightningModule):
         self.reconstruction_loss = model.reconstruction_loss
         self.generator_loss = model.generator_loss
 
-        self.lr = learning_rate if learning_rate != 'auto' else 0.001
+        self.lr = learning_rate if learning_rate is not None else 0.001
         self.wd = weight_decay_coefficient
         self._train_size = train_size
         self._val_size = val_size
-        self._batch_size = batch_size
+        self._batch_size = batch_size if batch_size is not None else 8
 
     def configure_optimizers(self):
         opt_reconstruction = torch.optim.AdamW(
@@ -77,6 +77,7 @@ class AAEBaseModule(pl.LightningModule):
         # Validate with reconstruction loss
         batch_in, _ = batch
         batch_in = batch_in.view(self._batch_size, -1)
+
         reconstruction_loss = self.reconstruction_loss(batch_in)
         self.log('val_r_loss', reconstruction_loss, prog_bar=True)
         return reconstruction_loss

@@ -12,6 +12,7 @@ from pathlib import Path
 from pprint import pprint
 
 from utils.dtypes import *
+from utils import dtypes
 
 
 def config_from_command_line(default_config: str):
@@ -39,8 +40,8 @@ def config_from_file(config_file: str):
         y = yaml.full_load(f)
 
 
-def save_object_to_version(obj, version: int, filename: str, log_dir: str = 'logs', name: str = 'Unnamed'):
-    save_path = Path(log_dir)/name/f'version_{version}'
+def save_object_to_version(obj, version: int, filename: str, log_dir: str = 'logs', name: str = 'Unnamed', datamodule: str = 'Unknown'):
+    save_path = Path(log_dir)/name/datamodule/f'version_{version}'
     if isinstance(obj, dtypes.Figure):
         obj.savefig(save_path/filename, format='eps')
     if isinstance(obj, dict):
@@ -208,7 +209,7 @@ class LunarAnaloguePreprocessingPipeline:
 
         # To conduct histogram equalization you have to operate on the intensity
         # values of the image, so a different color space is required
-        # TODO: Evaluate the effects of training your model on iamges in YCrCb colour space
+        # TODO: Evaluate the effects of training your model on images in YCrCb colour space
         image = cv.cvtColor(image, cv.COLOR_RGB2YCrCb)
         image[..., 0] = cv.equalizeHist(image[..., 0])
         image = cv.cvtColor(image, cv.COLOR_YCrCb2RGB)
@@ -250,24 +251,27 @@ class CuriosityPreprocessingPipeline:
         return image
 
 
+class NoveltyMNISTPreprocessingPipeline:
+    """
+    Standard image preprocessing pipeline for Curiosity data.
+    Cascades processing steps:
+        1) Channelwise standardization
+    """
+
+    def __init__(self):
+        return
+
+    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+        assert image.shape == (1, 28, 28), 'Dataset not in correct format for pre-processing'
+
+        # Convert image dtype to float
+        image = image.to(dtype=torch.float32)
+
+        # Standardize image
+        image = (image - image.mean()) / image.std()
+
+        return image
+
+
 if __name__ == '__main__':
     p = PathGlobber('datasets/filename_list.json')
-
-    # from datasets.lunar_analogue import LunarAnalogueDataGenerator
-    #
-    # config = config_from_command_line('configs/incremental_pca.yaml')
-    # data_obj = LunarAnalogueDataGenerator(config)
-    # gen = data_obj.create_generator('train')
-    #
-    # batch = next(gen)
-    #
-    # bstat_obj = BatchStatistics(batch)
-    # print(bstat_obj.mean)
-    #
-    # #
-    # fig = plt.figure()
-    # ax1 = fig.add_subplot(211)
-    # ax1.imshow(image)
-    # ax2 = fig.add_subplot(212)
-    # ax2.imshow(im_out);
-    # plt.show()
