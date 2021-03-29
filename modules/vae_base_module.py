@@ -20,7 +20,7 @@ class VAEBaseModule(pl.LightningModule):
         super().__init__()
 
         self.model = model
-        self.lr = learning_rate if learning_rate != 'auto' else 0.001
+        self.lr = learning_rate if learning_rate is not None else 0.001  # This will be overwritten by auto find if None
         self._train_size = train_size
         self._val_size = val_size
         self._batch_size = batch_size
@@ -86,21 +86,24 @@ class VAEBaseModule(pl.LightningModule):
         print(recons.shape)
         print(recons.data.shape)
 
-        vutils.save_image(grid,
-                          f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
-                          f"recons_{self.logger.name}_{self.current_epoch}.png",
-                          normalize=True,
-                          nrow=1)
+        vutils.save_image(
+            grid,
+            f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
+            f"recons_{self.logger.name}_{self.current_epoch}.png",
+            normalize=True,
+            nrow=1)
 
         try:
-            samples = self.model.sample(144,
-                                        self.curr_device,
-                                        labels=test_label)
-            vutils.save_image(samples.cpu().data,
-                              f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
-                              f"{self.logger.name}_{self.current_epoch}.png",
-                              normalize=True,
-                              nrow=12)
+            samples = self.model.sample(
+                144,
+                self.curr_device,
+                labels=test_label)
+            vutils.save_image(
+                samples.cpu().data,
+                f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
+                f"{self.logger.name}_{self.current_epoch}.png",
+                normalize=True,
+                nrow=12)
         except:
             pass
 

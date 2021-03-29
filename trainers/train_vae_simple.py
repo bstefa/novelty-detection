@@ -60,7 +60,7 @@ def main():
         ])
 
     # Find learning rate
-    if module_params['learning_rate'] == 'auto':
+    if module_params['learning_rate'] is None:
         lr_finder = trainer.tuner.lr_find(module, datamodule)
         module.lr = lr_finder.suggestion()
         print('[INFO] Using learning rate: ', module.lr)
