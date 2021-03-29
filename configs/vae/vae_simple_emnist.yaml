@@ -2,20 +2,20 @@
 experiment-parameters:
 
   # name (required, str): The name of the experiment. Typically best to align with the model being used.
-  name: 'CVAE'
+  name: 'VAESimple'
 
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
 
   # datamodule (required, str): The datamodule (or datagenerator) to use for your experiment.
-  datamodule: 'EMNISTDataModule'
+  datamodule: 'NoveltyMNISTDataModule'
 
 
 # data-parameters: Contains information used for preparing and loading the data.
 data-parameters:
 
   # root_data_path (required, str): Path to the common directory node immediately before training and testing branches.
-  root_data_path: '/home/fenrir/Documents/Datasets'
+  root_data_path: '/home/brahste/Datasets'
 
   # train_fraction (optional, float, default=0.8): Fraction of training samples to be used for
   # training, the rest will be used for validation. Set to null for default.

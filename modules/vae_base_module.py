@@ -8,7 +8,7 @@ import torchvision
 from utils.dtypes import *
 
 
-class CVAEBaseModule(pl.LightningModule):
+class VAEBaseModule(pl.LightningModule):
     def __init__(
             self,
             model: nn.Module,
@@ -17,7 +17,7 @@ class CVAEBaseModule(pl.LightningModule):
             learning_rate: float = 0.001,
             batch_size: int = 8,
             **kwargs):
-        super(CVAEBaseModule, self).__init__()
+        super().__init__()
 
         self.model = model
         self.lr = learning_rate if learning_rate != 'auto' else 0.001
