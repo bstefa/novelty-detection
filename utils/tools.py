@@ -275,22 +275,3 @@ class NoveltyMNISTPreprocessingPipeline:
 
 if __name__ == '__main__':
     p = PathGlobber('datasets/filename_list.json')
-
-    # from datasets.lunar_analogue import LunarAnalogueDataGenerator
-    #
-    # config = config_from_command_line('configs/incremental_pca.yaml')
-    # data_obj = LunarAnalogueDataGenerator(config)
-    # gen = data_obj.create_generator('train')
-    #
-    # batch = next(gen)
-    #
-    # bstat_obj = BatchStatistics(batch)
-    # print(bstat_obj.mean)
-    #
-    # #
-    # fig = plt.figure()
-    # ax1 = fig.add_subplot(211)
-    # ax1.imshow(image)
-    # ax2 = fig.add_subplot(212)
-    # ax2.imshow(im_out);
-    # plt.show()
