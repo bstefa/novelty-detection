@@ -282,4 +282,3 @@ class NoveltyMNISTPreprocessingPipeline:
 
 if __name__ == '__main__':
     p = PathGlobber('datasets/filename_list.json')
-

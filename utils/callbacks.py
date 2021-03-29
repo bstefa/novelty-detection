@@ -77,11 +77,12 @@ def _log_images(compute: dict, pl_module):
         )
 
 
-def _handle_image_logging(images: dict, pl_module):
+def _handle_image_logging(images: dict, pl_module) -> None:
     assert pl_module.logger.version is not None, 'Logging cannot proceed without a verison number.'
 
     batch_in_01 = tools.unstandardize_batch(images['batch_in'])
     batch_rc_01 = tools.unstandardize_batch(images['batch_rc'])
+
     compute = {
         'batch_in_01': batch_in_01,
         'batch_rc_01': batch_rc_01,
@@ -131,18 +132,3 @@ class AAEVisualization(pl.callbacks.base.Callback):
 
             batch_in = batch_in.view(image_shape[0], -1)
             batch_rc = pl_module.decoder(pl_module.encoder(batch_in.to(pl_module.device)))
-
-            batch_in = batch_in.view(*image_shape)
-            batch_rc = batch_rc.view(*image_shape)
-
-            if trainer.datamodule.name == 'CuriosityDataModule':
-                batch_in = batch_in[:, [2, 0, 1]]
-                batch_rc = batch_rc[:, [2, 0, 1]]
-
-            images = {
-                'batch_in': batch_in,
-                'batch_rc': batch_rc
-            }
-
-            _handle_image_logging(images, pl_module)
-
