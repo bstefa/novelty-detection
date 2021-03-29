@@ -6,10 +6,10 @@ from utils import tools
 from utils.dtypes import *
 
 
-class VariationalAutoEncoder(nn.Module):
+class SimpleVAE(nn.Module):
 
     def __init__(self, in_shape: torch.Tensor, latent_dims: int, **kwargs):
-        super(VariationalAutoEncoder, self).__init__()
+        super().__init__()
 
         self.C, self.H, self.W = in_shape
         self._latent_dims = latent_dims
