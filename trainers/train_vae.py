@@ -23,7 +23,6 @@ def main():
     datamodule.prepare_data()
     datamodule.setup('train')
 
-
     # Initialize model
     print('[INFO] Initializing model..')
     model = VariationalAutoEncoder(datamodule.shape, **module_params)
@@ -72,7 +71,8 @@ def main():
     trainer.fit(module, datamodule)
 
     # Some final saving once training is complete
-    tools.save_object_to_version(lr_finder_fig, version=module.version, filename='lr-find.eps', **exp_params)
+    if 'lr_finder_fig' in locals():
+        tools.save_object_to_version(lr_finder_fig, version=module.version, filename='lr-find.eps', **exp_params)
     tools.save_object_to_version(config, version=module.version, filename='configuration.yaml', **exp_params)
 
 

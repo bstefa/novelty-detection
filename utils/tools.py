@@ -12,6 +12,7 @@ from pathlib import Path
 from pprint import pprint
 
 from utils.dtypes import *
+from utils import dtypes
 
 
 def config_from_command_line(default_config: str):
@@ -39,15 +40,16 @@ def config_from_file(config_file: str):
         y = yaml.full_load(f)
 
 
-def save_object_to_version(obj, 
-                           version: int, 
-                           filename: str, 
-                           log_dir: str='logs', 
-                           name: str='Unnamed', 
-                           datamodule: str='None'):
+def save_object_to_version(
+        obj,
+        version: int,
+        filename: str,
+        log_dir: str = 'logs',
+        name: str = 'Unnamed',
+        datamodule: str = 'Unknown'):
 
-    save_path = Path(log_dir)/name/f'version_{version}'
-    if isinstance(obj, Figure):
+    save_path = Path(log_dir)/name/datamodule/f'version_{version}'
+    if isinstance(obj, dtypes.Figure):
         obj.savefig(save_path/filename, format='eps')
     if isinstance(obj, dict):
         with open(str(save_path/filename), 'w') as f:
@@ -88,10 +90,14 @@ def unstandardize_batch(batch_in: torch.Tensor, tol: float = 0.01):
         # Clone batch and detach from the computational graph
         batch = batch_in.detach().clone().to(device='cpu')
 
-        # Convert pixel range for each image in the batch
-        for b in range(len(batch)):
-            extremum = torch.max(torch.abs(batch[b]))
-            batch[b] = (batch[b] / (2 * extremum)) + 0.5
+        if torch.min(batch) >= 0.:
+            for b in range(len(batch)):
+                batch[b] = batch[b] / torch.max(batch[b])
+        else:
+            # Convert pixel range for each image in the batch
+            for b in range(len(batch)):
+                extremum = torch.max(torch.abs(batch[b]))
+                batch[b] = (batch[b] / (2 * extremum)) + 0.5
 
         # Some basic assertions to ensure correct range manipulation
         assert torch.max(batch) < (1.0 + tol), f'The maximum pixel intensity ({torch.max(batch)}) is out of range'
@@ -131,8 +137,8 @@ def get_error_map(x_input, x_output, tol: float = 0.001):
             raise ValueError('Input to error_map must be of shape 3 or 4')
 
         # Some basic assertions to ensure correct range manipulation
-        assert torch.max(x_err) < (1.0 + tol), 'The maximum pixel intensity is out of range'
-        assert torch.min(x_err) > (0.0 - tol), 'The minimum pixel intensity is out of range'
+        assert torch.max(x_err) < (1.0 + tol), f'The maximum pixel intensity {torch.max(x_err)} is out of range'
+        assert torch.min(x_err) > (0.0 - tol), f'The minimum pixel intensity {torch.min(x_err)} is out of range'
         return x_err
     if isinstance(x_output, np.ndarray):
         x_err = x_input - x_output
@@ -147,7 +153,7 @@ def gaussian_window(mean, std):
 
 
 # INCOMPLETE: DO NOT USE
-class BatchStatistics(object):
+class BatchStatistics:
     '''
     Evaluates statistics on input batch, accessible as member functions
     for easy, on the fly access.
@@ -210,7 +216,7 @@ class LunarAnaloguePreprocessingPipeline:
 
         # To conduct histogram equalization you have to operate on the intensity
         # values of the image, so a different color space is required
-        # TODO: Evaluate the effects of training your model on iamges in YCrCb colour space
+        # TODO: Evaluate the effects of training your model on images in YCrCb colour space
         image = cv.cvtColor(image, cv.COLOR_RGB2YCrCb)
         image[..., 0] = cv.equalizeHist(image[..., 0])
         image = cv.cvtColor(image, cv.COLOR_YCrCb2RGB)
@@ -252,24 +258,28 @@ class CuriosityPreprocessingPipeline:
         return image
 
 
+class NoveltyMNISTPreprocessingPipeline:
+    """
+    Standard image preprocessing pipeline for Curiosity data.
+    Cascades processing steps:
+        1) Channelwise standardization
+    """
+
+    def __init__(self):
+        return
+
+    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+        assert image.shape == (1, 28, 28), 'Dataset not in correct format for pre-processing'
+
+        # Convert image dtype to float
+        image = image.to(dtype=torch.float32)
+
+        # Standardize image
+        image = (image - image.mean()) / image.std()
+
+        return image
+
+
 if __name__ == '__main__':
     p = PathGlobber('datasets/filename_list.json')
 
-    # from datasets.lunar_analogue import LunarAnalogueDataGenerator
-    #
-    # config = config_from_command_line('configs/incremental_pca.yaml')
-    # data_obj = LunarAnalogueDataGenerator(config)
-    # gen = data_obj.create_generator('train')
-    #
-    # batch = next(gen)
-    #
-    # bstat_obj = BatchStatistics(batch)
-    # print(bstat_obj.mean)
-    #
-    # #
-    # fig = plt.figure()
-    # ax1 = fig.add_subplot(211)
-    # ax1.imshow(image)
-    # ax2 = fig.add_subplot(212)
-    # ax2.imshow(im_out);
-    # plt.show()
