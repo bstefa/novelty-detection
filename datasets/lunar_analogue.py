@@ -11,7 +11,7 @@ from skimage import io
 from sklearn.model_selection import train_test_split
 from utils import tools
 
-from .base_datamodule import BaseDataModule
+from datasets.base import BaseDataModule
 
 
 class LunarAnalogueDataset(torch.utils.data.Dataset):
@@ -45,10 +45,11 @@ class LunarAnalogueDataset(torch.utils.data.Dataset):
         return image, torch.tensor(self.get_label(idx))
 
     def get_label(self, idx: int):
+        path_string = str(self._list_of_image_paths[idx])
 
-        if 'typical/' in str(self._list_of_image_paths[idx]):
+        if 'typical' in path_string or 'train' in path_string:
             return 0
-        elif 'novel/' in str(self._list_of_image_paths[idx]):
+        elif 'novel' in path_string:
             return 1
         else:
             raise ValueError('Cannot find typical/ or novel/ in file path')
@@ -77,8 +78,8 @@ class LunarAnalogueDataModule(BaseDataModule):
         ])
 
         # Handle the default and optionally passed additional kwargs
-        self._glob_pattern_train = '**/nov-labelled/trainval/*.jpeg'
-        self._glob_pattern_test = '**/nov-labelled/test/**/*.jpeg'
+        self._glob_pattern_train = 'trainval/*.jpeg'
+        self._glob_pattern_test = 'test/**/*.jpeg'
         for key in kwargs:
             if key == 'glob_pattern_train' and kwargs[key] is not None:
                 self._glob_pattern_train = kwargs[key]

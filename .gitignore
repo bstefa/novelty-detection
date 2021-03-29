@@ -10,7 +10,7 @@ lightning_logs/
 *.ckpt
 *.swp
 *.orig
-
+*.ipe
 
 # GENERIC EXCLUDES
 
