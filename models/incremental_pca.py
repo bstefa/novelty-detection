@@ -1,5 +1,6 @@
 from sklearn import decomposition
 
+
 class IncrementalPCA():
     def __init__(self, n_components: int):
         self._ipca = decomposition.IncrementalPCA(n_components)
