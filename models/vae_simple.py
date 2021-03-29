@@ -6,10 +6,10 @@ from utils import tools
 from utils.dtypes import *
 
 
-class VariationalAutoEncoder(nn.Module):
+class SimpleVAE(nn.Module):
 
     def __init__(self, in_shape: torch.Tensor, latent_dims: int, **kwargs):
-        super(VariationalAutoEncoder, self).__init__()
+        super().__init__()
 
         self.C, self.H, self.W = in_shape
         self._latent_dims = latent_dims
@@ -30,9 +30,6 @@ class VariationalAutoEncoder(nn.Module):
         # TODO: check output dims of encoder
         self.fc_mu = nn.Linear(64 * 4 * 4, latent_dims)
         self.fc_var = nn.Linear(64 * 4 * 4, latent_dims)
-
-        # Build Decoder
-        modules = []
 
         # TODO: check input dims for decoder
         self.decoder_input = nn.Linear(latent_dims, 64 * 4 * 4)
@@ -60,7 +57,6 @@ class VariationalAutoEncoder(nn.Module):
         Receives an input image and outputs the mean and the logvar for the distribution q(z|x)
         """
         result = self.encoder(input)
-        print('ENCODER OUTPUT SHAPE:', result.shape)
         result = torch.flatten(result, start_dim=1)
 
         # Split the result into mu and var components
