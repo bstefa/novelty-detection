@@ -49,6 +49,10 @@ def save_object_to_version(
         datamodule: str = 'Unknown'):
 
     save_path = Path(log_dir)/name/datamodule/f'version_{version}'
+
+    if not save_path.is_dir():
+        save_path.mkdir(parents=True, exist_ok=True)
+
     if isinstance(obj, dtypes.Figure):
         obj.savefig(save_path/filename, format='eps')
     if isinstance(obj, dict):
