@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 import torchvision
 
 from utils.dtypes import *
-
+import torchvision.transforms.functional as TF
 
 class CVAEBaseModule(pl.LightningModule):
     def __init__(
@@ -80,11 +80,13 @@ class CVAEBaseModule(pl.LightningModule):
         # Get sample reconstruction image
 
         recons = self.model.generate(real_img)
-        grid = torch.cat((real_img, recons.data))
+        
+        real_img = TF.rotate(real_img, -90)
+        recons = TF.rotate(recons, -90)
+        real_img = TF.hflip(real_img)
+        recons = TF.hflip(recons)
 
-        print(grid.shape)
-        print(recons.shape)
-        print(recons.data.shape)
+        grid = torch.cat((real_img, recons))
 
         vutils.save_image(grid,
                           f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
@@ -92,17 +94,16 @@ class CVAEBaseModule(pl.LightningModule):
                           normalize=True,
                           nrow=1)
 
-        try:
-            samples = self.model.sample(144,
-                                        self.curr_device,
-                                        labels=test_label)
-            vutils.save_image(samples.cpu().data,
-                              f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
-                              f"{self.logger.name}_{self.current_epoch}.png",
-                              normalize=True,
-                              nrow=12)
-        except:
-            pass
+        samples = self.model.sample(144, next(self.model.parameters()).device)
+
+        samples = TF.rotate(samples, -90)
+        samples = TF.hflip(samples)
+
+        vutils.save_image(samples,
+                          f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
+                          f"{self.logger.name}_{self.current_epoch}.png",
+                          normalize=True,
+                          nrow=12)
 
         del recons
 
