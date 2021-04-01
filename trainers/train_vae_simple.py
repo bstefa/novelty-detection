@@ -1,9 +1,9 @@
 import torch
 import pytorch_lightning as pl
 
-from models.cvae import VariationalAutoEncoder
+from models.vae_simple import SimpleVAE
 from datasets import supported_datamodules
-from modules.cvae_base_module import CVAEBaseModule
+from modules.vae_base_module import VAEBaseModule
 from utils import tools
 from torchsummary import summary
 
@@ -23,17 +23,16 @@ def main():
     datamodule.prepare_data()
     datamodule.setup('train')
 
-
     # Initialize model
     print('[INFO] Initializing model..')
-    model = VariationalAutoEncoder(datamodule.shape, **module_params)
+    model = SimpleVAE(datamodule.shape, **module_params)
 
     # View a summary of the model
     summary(model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')), datamodule.shape)
 
     # Initialize module
     print('[INFO] Initializing module..')
-    module = CVAEBaseModule(
+    module = VAEBaseModule(
         model,
         train_size=datamodule.train_size,
         val_size=datamodule.val_size,
@@ -61,7 +60,7 @@ def main():
         ])
 
     # Find learning rate
-    if module_params['learning_rate'] == 'auto':
+    if module_params['learning_rate'] is None:
         lr_finder = trainer.tuner.lr_find(module, datamodule)
         module.lr = lr_finder.suggestion()
         print('[INFO] Using learning rate: ', module.lr)
@@ -72,10 +71,11 @@ def main():
     trainer.fit(module, datamodule)
 
     # Some final saving once training is complete
-    tools.save_object_to_version(lr_finder_fig, version=module.version, filename='lr-find.eps', **exp_params)
+    if 'lr_finder_fig' in locals():
+        tools.save_object_to_version(lr_finder_fig, version=module.version, filename='lr-find.eps', **exp_params)
     tools.save_object_to_version(config, version=module.version, filename='configuration.yaml', **exp_params)
 
 
 if __name__ == '__main__':
-    DEFAULT_CONFIG_FILE = 'configs/cvae/cvae_emnist.yaml'
+    DEFAULT_CONFIG_FILE = 'configs/vae/vae_simple_emnist.yaml'
     main()

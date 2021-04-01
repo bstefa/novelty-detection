@@ -1,16 +1,17 @@
 # Repo specific exlcudes
 .spyproject/
-__pycache__/
 lightning_logs/
 .idea/
 saved-models/
 logs/
-lightning_logs/
+
+# Scrap testing files
+utils/scripts/*.ipynb
 
 *.ckpt
 *.swp
 *.orig
-
+*.ipe
 
 # GENERIC EXCLUDES
 
