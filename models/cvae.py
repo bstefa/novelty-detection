@@ -122,7 +122,7 @@ class VariationalAutoEncoder(nn.Module):
 
         return {'loss': elbo_loss, 'reconstruction_loss': reconstruction_loss, 'KLD': -kld_loss}
 
-    def sample(self, num_samples: int, current_device: int, **kwargs) -> Tensor:
+    def sample(self, num_samples: int, current_device: str, **kwargs) -> Tensor:
         """
         Sample z from latent space q(z) and return reconstruction p(x|z)
         """
