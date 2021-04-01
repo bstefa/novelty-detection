@@ -8,7 +8,7 @@ import torchvision
 from utils.dtypes import *
 import torchvision.transforms.functional as TF
 
-class CVAEBaseModule(pl.LightningModule):
+class VAEBaseModule(pl.LightningModule):
     def __init__(
             self,
             model: nn.Module,
@@ -17,10 +17,10 @@ class CVAEBaseModule(pl.LightningModule):
             learning_rate: float = 0.001,
             batch_size: int = 8,
             **kwargs):
-        super(CVAEBaseModule, self).__init__()
+        super().__init__()
 
         self.model = model
-        self.lr = learning_rate if learning_rate != 'auto' else 0.001
+        self.lr = learning_rate if learning_rate is not None else 0.001  # This will be overwritten by auto find if None
         self._train_size = train_size
         self._val_size = val_size
         self._batch_size = batch_size
@@ -88,23 +88,27 @@ class CVAEBaseModule(pl.LightningModule):
 
         grid = torch.cat((real_img, recons))
 
-        vutils.save_image(grid,
-                          f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
-                          f"recons_{self.logger.name}_{self.current_epoch}.png",
-                          normalize=True,
-                          nrow=1)
+        vutils.save_image(
+            grid,
+            f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
+            f"recons_{self.logger.name}_{self.current_epoch}.png",
+            normalize=True,
+            nrow=1)
 
-        samples = self.model.sample(144, next(self.model.parameters()).device)
-
-        samples = TF.rotate(samples, -90)
-        samples = TF.hflip(samples)
-
-        vutils.save_image(samples,
-                          f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
-                          f"{self.logger.name}_{self.current_epoch}.png",
-                          normalize=True,
-                          nrow=12)
-
+        try:
+            samples = self.model.sample(
+                144,
+                self.curr_device,
+                labels=test_label)
+            vutils.save_image(
+                samples.cpu().data,
+                f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
+                f"{self.logger.name}_{self.current_epoch}.png",
+                normalize=True,
+                nrow=12)
+        except:
+            pass
+            
         del recons
 
     @property

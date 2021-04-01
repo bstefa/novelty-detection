@@ -9,14 +9,14 @@ class EncodingBlock(nn.Module):
     ):
         super(EncodingBlock, self).__init__()
         self.conv = nn.Conv2d(in_chans, out_chans, kernel_size=kernel_size, padding=padding, **kwargs)
-        self.activation = nn.LeakyReLU(negative_slope=leak)
         self.drop = nn.Dropout2d(p=drop_prob)
+        self.activation = nn.LeakyReLU(negative_slope=leak)
         self.bn = nn.BatchNorm2d(out_chans)
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.activation(x)
         x = self.drop(x)
+        x = self.activation(x)
         x = self.bn(x)
         return x
 
@@ -29,26 +29,25 @@ class DecodingBlock(nn.Module):
     ):
         super(DecodingBlock, self).__init__()
         self.transconv = nn.ConvTranspose2d(in_chans, out_chans, kernel_size=kernel_size, padding=padding, **kwargs)
-        self.activation = nn.LeakyReLU(leak)
         self.drop = nn.Dropout2d(drop_prob)
+        self.activation = nn.LeakyReLU(leak)
         self.bn = nn.BatchNorm2d(out_chans)
 
     def forward(self, x):
         x = self.transconv(x)
-        x = self.activation(x)
         x = self.drop(x)
+        x = self.activation(x)
         x = self.bn(x)
         return x
 
 
-class ReferenceCAE(nn.Module):
-    def __init__(self, in_shape: int):
-        super(ReferenceCAE, self).__init__()
-        c = in_shape[0]  # Extract the channels
+class BaselineCAE(nn.Module):
+    def __init__(self, in_chans: int):
+        super().__init__()
 
         # Encoding layers
         self.encoder = nn.Sequential(
-            EncodingBlock(c, 24),
+            EncodingBlock(in_chans, 24),
             EncodingBlock(24, 48),
             EncodingBlock(48, 48, stride=2),
             EncodingBlock(48, 24),
@@ -65,7 +64,7 @@ class ReferenceCAE(nn.Module):
             DecodingBlock(24, 48),
             DecodingBlock(48, 48, stride=2, output_padding=1),
             DecodingBlock(48, 24),
-            nn.Conv2d(24, c, kernel_size=5, padding=2),
+            nn.Conv2d(24, in_chans, kernel_size=5, padding=2),
             nn.Tanh()  # Same size as input
         )
 
