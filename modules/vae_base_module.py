@@ -111,6 +111,23 @@ class VAEBaseModule(pl.LightningModule):
             
         del recons
 
+    def test_step(self, batch, batch_nb):
+        batch_in, batch_labels = batch
+        recons = self.model.generate(batch_in)
+
+        mse_loss = torch.nn.MSELoss(reduction='none')
+        recons_error = mse_loss(recons, batch_in)
+        mse_loss_sum = torch.sum(recons_error, dim=(1, 2, 3))
+
+        results_dict = {
+            'scores': mse_loss_sum,
+            'labels': batch_labels
+        }
+
+        return results_dict
+
+
+
     @property
     def version(self):
         return self.logger.version
