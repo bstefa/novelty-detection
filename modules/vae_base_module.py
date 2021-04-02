@@ -12,8 +12,8 @@ class VAEBaseModule(pl.LightningModule):
     def __init__(
             self,
             model: nn.Module,
-            train_size: int,
-            val_size: int,
+            train_size: int = 0,
+            val_size: int = 0,
             learning_rate: float = 0.001,
             batch_size: int = 8,
             **kwargs):
