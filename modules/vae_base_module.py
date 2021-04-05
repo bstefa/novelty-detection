@@ -81,33 +81,29 @@ class VAEBaseModule(pl.LightningModule):
 
         recons = self.model.generate(real_img)
         
-        real_img = TF.rotate(real_img, -90)
-        recons = TF.rotate(recons, -90)
-        real_img = TF.hflip(real_img)
-        recons = TF.hflip(recons)
+        # real_img = TF.rotate(real_img, -90)
+        # recons = TF.rotate(recons, -90)
+        # real_img = TF.hflip(real_img)
+        # recons = TF.hflip(recons)
 
         grid = torch.cat((real_img, recons))
 
         vutils.save_image(
             grid,
             f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
-            f"recons_{self.logger.name}_{self.current_epoch}.png",
+            f"media/recons_{self.logger.name}_{self.current_epoch}.png",
             normalize=True,
             nrow=1)
 
-        try:
-            samples = self.model.sample(
-                144,
-                self.curr_device,
-                labels=test_label)
-            vutils.save_image(
-                samples.cpu().data,
-                f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
-                f"{self.logger.name}_{self.current_epoch}.png",
-                normalize=True,
-                nrow=12)
-        except:
-            pass
+        
+        samples = self.model.sample(num_samples=144)
+
+        vutils.save_image(
+            samples,
+            f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
+            f"media/random_{self.logger.name}_{self.current_epoch}.png",
+            normalize=True,
+            nrow=12)
             
         del recons
 

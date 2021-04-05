@@ -122,14 +122,12 @@ class SimpleVAE(nn.Module):
 
         return {'loss': elbo_loss, 'reconstruction_loss': reconstruction_loss, 'KLD': -kld_loss}
 
-    def sample(self, num_samples: int, current_device: str, **kwargs) -> Tensor:
+    def sample(self, num_samples: int, **kwargs) -> Tensor:
         """
         Sample z from latent space q(z) and return reconstruction p(x|z)
         """
 
-        z = torch.randn(num_samples, self._latent_dims)
-        z = z.to(current_device)
-
+        z = torch.randn(num_samples, self._latent_dims, device=torch.device('cuda'))
         samples = self.decode(z)
 
         return samples
