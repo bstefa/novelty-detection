@@ -107,7 +107,7 @@ class VAEBaseModule(pl.LightningModule):
             
         del recons
 
-    def test_step(self, batch, batch_nb):
+    def test_step(self, batch, batch_nb, loss):
         batch_in, batch_labels = batch
         recons = self.model.generate(batch_in)
 
