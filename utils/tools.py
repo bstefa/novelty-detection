@@ -81,7 +81,7 @@ def chw2hwc(x):
         return np.transpose(x, (1, 2, 0))
 
 
-def unstandardize_batch(batch_in: torch.Tensor, tol: float = 0.01):
+def unstandardize_batch(batch_in: torch.Tensor, tol: float = 0.001):
     '''
     This function is purposed for converting images pixels
     from a unit Gaussian into the range [0,1] for viewing
@@ -90,14 +90,19 @@ def unstandardize_batch(batch_in: torch.Tensor, tol: float = 0.01):
         # Clone batch and detach from the computational graph
         batch = batch_in.detach().clone().to(device='cpu')
 
-        if torch.min(batch) >= 0.:
-            for b in range(len(batch)):
-                batch[b] = batch[b] / torch.max(batch[b])
-        else:
-            # Convert pixel range for each image in the batch
-            for b in range(len(batch)):
-                extremum = torch.max(torch.abs(batch[b]))
-                batch[b] = (batch[b] / (2 * extremum)) + 0.5
+        for b in range(len(batch)):
+            minimum = torch.min(batch[b])
+            maximum = torch.max(batch[b])
+            batch[b] = (batch[b] - minimum) / (maximum - minimum)
+
+        # if torch.min(batch) >= 0.:
+        #     for b in range(len(batch)):
+        #         batch[b] = batch[b] / torch.max(batch[b])
+        # else:
+        #     # Convert pixel range for each image in the batch
+        #     for b in range(len(batch)):
+        #         extremum = torch.max(torch.abs(batch[b]))
+        #         batch[b] = (batch[b] / (2 * extremum)) + 0.5
 
         # Some basic assertions to ensure correct range manipulation
         assert torch.max(batch) < (1.0 + tol), f'The maximum pixel intensity ({torch.max(batch)}) is out of range'
@@ -109,8 +114,9 @@ def unstandardize_batch(batch_in: torch.Tensor, tol: float = 0.01):
 
         # Convert pixel range for each image in the batch
         for b in range(len(batch)):
-            extremum = np.amax(np.abs(batch[b]))
-            batch[b] = (batch[b] / (2 * extremum)) + 0.5
+            minimum = np.amin(batch[b])
+            maximum = np.amax(batch[b])
+            batch[b] = (batch[b] - minimum) / (maximum - minimum)
 
         # Some basic assertions to ensure correct range manipulation
         assert np.amax(batch) < (1.0 + tol), f'The maximum pixel intensity ({torch.max(batch)}) is out of range'
@@ -222,7 +228,7 @@ class LunarAnaloguePreprocessingPipeline:
         image = cv.cvtColor(image, cv.COLOR_YCrCb2RGB)
 
         # Minor Gaussian blurring
-        image = cv.GaussianBlur(image, (3, 3), 0.5)
+        image = cv.medianBlur(image, 3)
 
         # Convert image dtype to float
         image = np.float32(image)
