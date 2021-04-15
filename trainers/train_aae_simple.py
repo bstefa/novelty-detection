@@ -8,6 +8,9 @@ from modules.aae_base_module import AAEBaseModule
 from utils import tools, callbacks
 from functools import reduce
 
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 def main():
     # Load configs
@@ -24,9 +27,11 @@ def main():
     datamodule.prepare_data()
     datamodule.setup('train')
 
-    # Initialize model
+    logging.debug(datamodule.data_shape)
+
+    # Initialize model with number of nodes equal to number of input pixels
     print('[INFO] Initializing model..')
-    model = SimpleAAE(reduce(lambda x, y: x*y, datamodule.shape), **module_params)
+    model = SimpleAAE(in_nodes=reduce(lambda x, y: x*y, datamodule.data_shape), **module_params)
 
     # Initialize module
     print('[INFO] Initializing module..')

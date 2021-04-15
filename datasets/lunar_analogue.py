@@ -9,7 +9,7 @@ from pathlib import Path
 from torchvision import transforms
 from skimage import io
 from sklearn.model_selection import train_test_split
-from utils import tools
+from utils import tools, preprocessing
 
 from datasets.base import BaseDataModule
 
@@ -73,8 +73,11 @@ class LunarAnalogueDataModule(BaseDataModule):
         self._root_data_path = root_data_path
 
         self._data_transforms = transforms.Compose([
-            tools.LunarAnaloguePreprocessingPipeline(),
-            transforms.ToTensor(),
+            preprocessing.LunarAnaloguePreprocessingPipeline(),
+            tools.unstandardize_batch,
+            preprocessing.NovelRegionExtractorPipeline(),
+            transforms.Lambda(lambda regions: torch.stack([transforms.ToTensor()(region) for region in regions])),
+            transforms.Lambda(lambda x: x.to(dtype=torch.float32))
         ])
 
         # Handle the default and optionally passed additional kwargs
@@ -165,7 +168,7 @@ class LunarAnalogueDataGenerator:
         self._root_data_path = root_data_path
 
         # Define preprocessing pipeline
-        self._data_transforms = tools.PreprocessingPipeline()
+        self._data_transforms = preprocessing.LunarAnaloguePreprocessingPipeline()
 
     def setup(self, stage: str):
 

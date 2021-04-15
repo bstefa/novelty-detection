@@ -2,7 +2,7 @@
 experiment-parameters:
 
   # name (required, str): The name of the experiment. Typically best to align with the model being used.
-  name: 'CAEBaseline'
+  model: 'BaselineCAE'
 
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
@@ -36,7 +36,7 @@ module-parameters:
 
   # learning_rate (optional, float, default='auto'): Scaling factor for gradient descent step.
   # Set to null for default.
-  learning_rate: null
+  learning_rate: 0.002
 
   # weight_decay_coefficient (optional, float, default=0.01): Scaling factor for loss regularization term.
   # Set to null for default.

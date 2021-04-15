@@ -16,6 +16,7 @@ from utils import dtypes
 
 
 def config_from_command_line(default_config: str):
+    """Use this function to read configurations for training scripts"""
     if len(sys.argv) == 1:
         # Then the file being called is the only argument so return the default configuration
         config_file = default_config
@@ -36,8 +37,12 @@ def config_from_command_line(default_config: str):
 
 
 def config_from_file(config_file: str):
+    """Use this function to read configurations in Jupyter Notebooks"""
     with open(str(config_file)) as f:
         y = yaml.full_load(f)
+        print(f'Experimental parameters\n------')
+        pprint(y)
+        return y
 
 
 def save_object_to_version(
@@ -45,10 +50,10 @@ def save_object_to_version(
         version: int,
         filename: str,
         log_dir: str = 'logs',
-        name: str = 'Unnamed',
-        datamodule: str = 'Unknown'):
-
-    save_path = Path(log_dir)/name/datamodule/f'version_{version}'
+        model: str = 'Unnamed',
+        datamodule: str = 'Unknown',
+        **kwargs):
+    save_path = Path(log_dir) / datamodule / model / f'version_{version}'
     if isinstance(obj, dtypes.Figure):
         obj.savefig(save_path/filename, format='eps')
     if isinstance(obj, dict):
@@ -95,15 +100,6 @@ def unstandardize_batch(batch_in: torch.Tensor, tol: float = 0.001):
             maximum = torch.max(batch[b])
             batch[b] = (batch[b] - minimum) / (maximum - minimum)
 
-        # if torch.min(batch) >= 0.:
-        #     for b in range(len(batch)):
-        #         batch[b] = batch[b] / torch.max(batch[b])
-        # else:
-        #     # Convert pixel range for each image in the batch
-        #     for b in range(len(batch)):
-        #         extremum = torch.max(torch.abs(batch[b]))
-        #         batch[b] = (batch[b] / (2 * extremum)) + 0.5
-
         # Some basic assertions to ensure correct range manipulation
         assert torch.max(batch) < (1.0 + tol), f'The maximum pixel intensity ({torch.max(batch)}) is out of range'
         assert torch.min(batch) > (0.0 - tol), f'The minimum pixel intensity ({torch.min(batch)}) is out of range'
@@ -149,141 +145,6 @@ def get_error_map(x_input, x_output, tol: float = 0.001):
     if isinstance(x_output, np.ndarray):
         x_err = x_input - x_output
         return x_err / np.max(np.abs(x_err))
-
-
-def gaussian_window(mean, std):
-    x = np.linspace(mean - 3.5 * std, mean + 3.5 * std, 100)
-    coefficient = (1 / std * (2 * np.pi) ** (-1 / 2))
-    argument = (-1 / 2) * (((x - mean) / std) ** 2)
-    return np.exp(argument)
-
-
-# INCOMPLETE: DO NOT USE
-class BatchStatistics:
-    '''
-    Evaluates statistics on input batch, accessible as member functions
-    for easy, on the fly access.
-    '''
-
-    def __init__(self, batch_in):
-        if isinstance(batch_in, torch.Tensor):
-            # Detach tensor from comp graph, clone to cpu, convert to numpy
-            batch_in = batch_in.detach().clone().to(device='cpu').numpy()
-        assert isinstance(batch_in, np.ndarray), 'Batch wasn\'t successfully converted to numpy'
-        self.batch_in = batch_in
-
-    # The main purpose of any decorator is to change your class methods or
-    # attributes in such a way so that the user of your class no need to
-    # make any change in their code.
-    @property
-    def shape(self):
-        return self.batch_in.shape
-
-    @property
-    def mean(self):
-        return np.mean(self.batch_in)
-
-    @property
-    def min(self):
-        return np.amin(self.batch_in)
-
-    @property
-    def max(self):
-        return np.amax(self.batch_in)
-
-    @property
-    def extremum(self):
-        return np.amax(np.amax(self.batch_in), np.abs(np.amin(self.batch_in)))
-
-    @property
-    def std(self):
-        return np.std(self.batch_in)
-
-
-class LunarAnaloguePreprocessingPipeline:
-    """
-    Standard image preprocessing pipeline for Lunar Analogue data.
-    Cascades processing steps:
-        1) resize
-        2) histogram equalization
-        3) Gaussian blurring
-        4) channelwise standardization
-    See the slides from: https://cedar.buffalo.edu/~srihari/CSE676/12.2%20Computer%20Vision.pdf
-    for more information on the steps used here.
-    """
-
-    def __init__(self):
-        return
-
-    def __call__(self, image: np.ndarray) -> np.ndarray:
-        n_channels = image.shape[-1]
-
-        image = cv.resize(image, (256, 256), interpolation=cv.INTER_AREA)
-
-        # To conduct histogram equalization you have to operate on the intensity
-        # values of the image, so a different color space is required
-        # TODO: Evaluate the effects of training your model on images in YCrCb colour space
-        image = cv.cvtColor(image, cv.COLOR_RGB2YCrCb)
-        image[..., 0] = cv.equalizeHist(image[..., 0])
-        image = cv.cvtColor(image, cv.COLOR_YCrCb2RGB)
-
-        # Minor Gaussian blurring
-        image = cv.medianBlur(image, 3)
-
-        # Convert image dtype to float
-        image = np.float32(image)
-
-        # Standardize image
-        for c in range(n_channels):
-            image[..., c] = (image[..., c] - image[..., c].mean()) / image[..., c].std()
-
-        return image
-
-
-class CuriosityPreprocessingPipeline:
-    """
-    Standard image preprocessing pipeline for Curiosity data.
-    Cascades processing steps:
-        1) Channelwise standardization
-    """
-
-    def __init__(self):
-        return
-
-    def __call__(self, image: np.ndarray) -> np.ndarray:
-        assert image.shape == (64, 64, 6), 'Dataset not in correct format for pre-processing'
-        n_channels = image.shape[-1]
-
-        # Convert image dtype to float
-        image = np.float32(image)
-
-        # Standardize image
-        for c in range(n_channels):
-            image[..., c] = (image[..., c] - image[..., c].mean()) / image[..., c].std()
-
-        return image
-
-
-class NoveltyMNISTPreprocessingPipeline:
-    """
-    Standard image preprocessing pipeline for Curiosity data.
-    Cascades processing steps:
-        1) Channelwise standardization
-    """
-
-    def __init__(self):
-        return
-
-    def __call__(self, image: torch.Tensor) -> torch.Tensor:
-        assert image.shape == (1, 28, 28), 'Dataset not in correct format for pre-processing'
-
-        # Convert image dtype to float
-        image = image.to(dtype=torch.float32)
-
-        # Standardize image
-        image = (image - image.mean()) / image.std()
-
-        return image
 
 
 if __name__ == '__main__':
