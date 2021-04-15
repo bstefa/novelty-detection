@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 class EncodingBlock(nn.Module):
     def __init__(
             self, in_chans: int, out_chans: int,
-            kernel_size: int=5, padding: int=2, drop_prob: float=0.1, leak: float=0.1,
+            kernel_size: int=3, padding: int=1, drop_prob: float=0.1, leak: float=0.1,
             **kwargs
     ):
         super(EncodingBlock, self).__init__()
@@ -28,7 +28,7 @@ class EncodingBlock(nn.Module):
 class DecodingBlock(nn.Module):
     def __init__(
             self, in_chans: int, out_chans: int,
-            kernel_size: int=5, padding: int=2, drop_prob: float=0.1, leak: float=0.1,
+            kernel_size: int=3, padding: int=1, drop_prob: float=0.1, leak: float=0.1,
             **kwargs
     ):
         super(DecodingBlock, self).__init__()
@@ -45,7 +45,7 @@ class DecodingBlock(nn.Module):
         return x
 
 
-class BaselineCAE(nn.Module):
+class CompressionCAE(nn.Module):
     def __init__(self, in_chans: int):
         super().__init__()
         assert isinstance(in_chans, int), f'in_chans must be of type int, got {type(in_chans)}'
@@ -53,28 +53,31 @@ class BaselineCAE(nn.Module):
         # Encoding layers
         self.encoder = nn.Sequential(
             EncodingBlock(in_chans, 24),
-            EncodingBlock(24, 48),
-            EncodingBlock(48, 48, stride=2),
-            EncodingBlock(48, 24),
-            EncodingBlock(24, 16),
-            EncodingBlock(16, 8, stride=2),
-            nn.Conv2d(8, 3, kernel_size=5, padding=2),
+            EncodingBlock(24, 24, dilation=2),
+            EncodingBlock(24, 48, stride=2),
+            EncodingBlock(48, 48, dilation=2),
+            EncodingBlock(48, 24, stride=2),
+            EncodingBlock(24, 24, dilation=2),
+            EncodingBlock(24, 8, stride=2),
+            nn.Conv2d(8, 1, kernel_size=3, padding=1),
         )
 
-        # Decoding layers
         self.decoder = nn.Sequential(
-            DecodingBlock(3, 8),
-            DecodingBlock(8, 16, stride=2, output_padding=1),
-            DecodingBlock(16, 24),
-            DecodingBlock(24, 48),
-            DecodingBlock(48, 48, stride=2, output_padding=1),
-            DecodingBlock(48, 24),
-            nn.Conv2d(24, in_chans, kernel_size=5, padding=2),
-            nn.Tanh()  # Same size as input
+            DecodingBlock(1, 8),
+            DecodingBlock(8, 24, stride=2),
+            DecodingBlock(24, 24, dilation=2),
+            DecodingBlock(24, 48, stride=2, output_padding=1),
+            DecodingBlock(48, 48, dilation=2, output_padding=1),
+            DecodingBlock(48, 24, stride=2, output_padding=1),
+            DecodingBlock(24, 24, dilation=2),
+            nn.Conv2d(24, in_chans, kernel_size=3, padding=1),
+            nn.Tanh()
         )
 
     def forward(self, x):
+        in_shape = x.shape
         # Simple encoding into latent representation and decoding back to input space
         x = self.encoder(x)
         x = self.decoder(x)
+        assert x.shape == in_shape, f'Input and output shapes must match: {in_shape} != {x.shape}'
         return x

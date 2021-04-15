@@ -5,18 +5,18 @@ from utils.dtypes import *
 
 
 class Encoder(nn.Module):
-    def __init__(self, in_chans: int, latent_chans: int = 8):
+    def __init__(self, in_nodes: int, latent_nodes: int = 8):
         super(Encoder, self).__init__()
 
         # TODO: Consider initializing the weights explicitly here
         self.encoder = nn.Sequential(
-            nn.Linear(in_chans, 1000),
+            nn.Linear(in_nodes, 1000),
             nn.Dropout(p=0.3),
             nn.ReLU(),
             nn.Linear(1000, 1000),
             nn.Dropout(p=0.3),
             nn.ReLU(),
-            nn.Linear(1000, latent_chans))
+            nn.Linear(1000, latent_nodes))
 
     def forward(self, x):
         # print('ENC INPUT ', x.shape)
@@ -24,18 +24,18 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, out_chans: int, latent_chans: int = 8):
+    def __init__(self, out_nodes: int, latent_nodes: int = 8):
         super(Decoder, self).__init__()
 
         # TODO: Consider initializing the weights explicitly here
         self.decoder = nn.Sequential(
-            nn.Linear(latent_chans, 1000),
+            nn.Linear(latent_nodes, 1000),
             nn.Dropout(p=0.2),
             nn.ReLU(),
             nn.Linear(1000, 1000),
             nn.Dropout(p=0.2),
             nn.ReLU(),
-            nn.Linear(1000, out_chans),
+            nn.Linear(1000, out_nodes),
             nn.Sigmoid())
 
     def forward(self, x):
@@ -43,12 +43,12 @@ class Decoder(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, latent_chans: int = 8):
+    def __init__(self, latent_nodes: int = 8):
         super(Discriminator, self).__init__()
 
         # TODO: Consider initializing the weights explicitly here
         self.discriminator = nn.Sequential(
-            nn.Linear(latent_chans, 1000),
+            nn.Linear(latent_nodes, 1000),
             nn.Dropout(p=0.2),
             nn.ReLU(),
             nn.Linear(1000, 1000),
@@ -62,12 +62,12 @@ class Discriminator(nn.Module):
 
 
 class SimpleAAE(nn.Module):
-    def __init__(self, in_chans: int, latent_chans: int = 8, **kwargs):
+    def __init__(self, in_nodes: int, latent_nodes: int = 8, **kwargs):
         super().__init__()
 
-        self.encoder = Encoder(in_chans=in_chans, latent_chans=latent_chans)
-        self.decoder = Decoder(out_chans=in_chans, latent_chans=latent_chans)
-        self.discriminator = Discriminator(latent_chans=latent_chans)
+        self.encoder = Encoder(in_nodes=in_nodes, latent_nodes=latent_nodes)
+        self.decoder = Decoder(out_nodes=in_nodes, latent_nodes=latent_nodes)
+        self.discriminator = Discriminator(latent_nodes=latent_nodes)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     def prior(self, *size):

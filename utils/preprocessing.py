@@ -1,14 +1,11 @@
 import cv2 as cv
+import torch
 import numpy as np
 
 from sklearn.cluster import KMeans
 
-
-# def _filter_by_area(rect, area_low: float, area_high: float):
-#     assert len(rect) == 4, 'Only accepts bounding rectangles with elements (x, y, w, h)'
-#     area = np.float32(rect[2] * rect[3])
-#     # return (area > area_low) and (area < area_high)
-#     return True
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class NovelRegionExtractorPipeline:
@@ -50,6 +47,91 @@ class NovelRegionExtractorPipeline:
             warped_crops[i] = warped_crop
 
         return warped_crops
+
+class LunarAnaloguePreprocessingPipeline:
+    """
+    Standard image preprocessing pipeline for Lunar Analogue data.
+    Cascades processing steps:
+        1) resize
+        2) histogram equalization
+        3) Gaussian blurring
+        4) channelwise standardization
+    See the slides from: https://cedar.buffalo.edu/~srihari/CSE676/12.2%20Computer%20Vision.pdf
+    for more information on the steps used here.
+    """
+
+    def __init__(self):
+        return
+
+    def __call__(self, image: np.ndarray) -> np.ndarray:
+        n_channels = image.shape[-1]
+
+        image = cv.resize(image, (256, 256), interpolation=cv.INTER_AREA)
+
+        # To conduct histogram equalization you have to operate on the intensity
+        # values of the image, so a different color space is required
+        # TODO: Evaluate the effects of training your model on images in YCrCb colour space
+        image = cv.cvtColor(image, cv.COLOR_RGB2YCrCb)
+        image[..., 0] = cv.equalizeHist(image[..., 0])
+        image = cv.cvtColor(image, cv.COLOR_YCrCb2RGB)
+
+        # Minor Gaussian blurring
+        image = cv.medianBlur(image, 3)
+
+        # Convert image dtype to float
+        image = np.float32(image)
+
+        # Standardize image
+        for c in range(n_channels):
+            image[..., c] = (image[..., c] - image[..., c].mean()) / image[..., c].std()
+
+        return image
+
+
+class CuriosityPreprocessingPipeline:
+    """
+    Standard image preprocessing pipeline for Curiosity data.
+    Cascades processing steps:
+        1) Channelwise standardization
+    """
+
+    def __init__(self):
+        return
+
+    def __call__(self, image: np.ndarray) -> np.ndarray:
+        assert image.shape == (64, 64, 6), 'Dataset not in correct format for pre-processing'
+        n_channels = image.shape[-1]
+
+        # Convert image dtype to float
+        image = np.float32(image)
+
+        # Standardize image
+        for c in range(n_channels):
+            image[..., c] = (image[..., c] - image[..., c].mean()) / image[..., c].std()
+
+        return image
+
+
+class NoveltyMNISTPreprocessingPipeline:
+    """
+    Standard image preprocessing pipeline for Curiosity data.
+    Cascades processing steps:
+        1) Channelwise standardization
+    """
+
+    def __init__(self):
+        return
+
+    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+        assert image.shape == (1, 28, 28), 'Dataset not in correct format for pre-processing'
+
+        # Convert image dtype to float
+        image = image.to(dtype=torch.float32)
+
+        # Standardize image
+        image = (image - image.mean()) / image.std()
+
+        return image
 
 
 if __name__ == '__main__':

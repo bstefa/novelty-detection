@@ -9,11 +9,13 @@ import os
 import torch
 import torchvision
 import pytorch_lightning as pl
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 from utils import tools
 
 
-def learning_rate_finder(trainer, module, datamodule):
+def learning_rate_finder(trainer, module, datamodule, **kwargs):
     lr_finder = trainer.tuner.lr_find(module, datamodule)
     suggested_lr = lr_finder.suggestion()
     lr_finder_fig = lr_finder.plot(suggest=True, show=False)
@@ -93,6 +95,27 @@ def _handle_image_logging(images: dict, pl_module) -> None:
     _log_images(compute, pl_module)
 
 
+class DataIntegrityCallback(pl.callbacks.base.Callback):
+    """This callback manages the shapes for data with a region dimension"""
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def _handle_batch(batch):
+        """Conducts an inplace operation to merge regions and batch size if necessary"""
+        batch_in, _ = batch
+        assert any(len(batch_in.shape) == s for s in (4, 5)), f'Batch must have 4 or 5 dims, got {len(batch_in.shape)}'
+        if len(batch_in.shape) == 5:
+            batch_in = batch_in.view(-1, *batch_in.shape[2:])
+        batch = (batch_in, _)
+
+    def on_train_batch_start(self, trainer, pl_module, batch, batch_idx, dataloader_idx):
+        self._handle_batch(batch)
+
+    def on_validation_batch_start(self, trainer, pl_module, batch, batch_idx, dataloader_idx):
+        self._handle_batch(batch)
+
+
 class VisualizationCallback(pl.callbacks.base.Callback):
     def __init__(self):
         self._save_at_train_step = 0
@@ -103,8 +126,8 @@ class VisualizationCallback(pl.callbacks.base.Callback):
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if self._save_at_train_step == pl_module.global_step:
-            batch_in, _ = batch
-            batch_in.detach_()
+            batch_in, _ = pl_module.handle_batch(batch)
+            batch_in = batch_in.detach()
             batch_rc = pl_module.forward(batch_in.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
             if trainer.datamodule.name == 'CuriosityDataModule':
                 batch_in = batch_in[:, [2, 0, 1]]
@@ -127,8 +150,17 @@ class AAEVisualization(pl.callbacks.base.Callback):
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if self._save_at_train_step == pl_module.global_step:
             batch_in, _ = batch
-            batch_in.detach_()
+            batch_in = batch_in.detach()
             image_shape = batch_in.shape
 
             batch_in = batch_in.view(image_shape[0], -1)
-            batch_rc = pl_module.decoder(pl_module.encoder(batch_in.to(pl_module.device)))
+            latent_vec = pl_module.encoder(batch_in.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
+            batch_rc = pl_module.decoder(latent_vec)
+            if trainer.datamodule.name == 'CuriosityDataModule':
+                batch_in = batch_in[:, [2, 0, 1]]
+                batch_rc = batch_rc[:, [2, 0, 1]]
+            images = {
+                'batch_in': batch_in.reshape(image_shape),
+                'batch_rc': batch_rc.reshape(image_shape)
+            }
+            _handle_image_logging(images, pl_module)
