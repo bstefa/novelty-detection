@@ -60,7 +60,6 @@ class TestNoveltyMNISTData(unittest.TestCase):
         test_x_step(self.dm.train_dataloader())
         test_x_step(self.dm.val_dataloader())
         test_x_step(self.dm.test_dataloader())
-
     # TODO: Write test for other models (AAE, VAE, PCA)
 
 

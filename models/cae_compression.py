@@ -45,7 +45,7 @@ class DecodingBlock(nn.Module):
         return x
 
 
-class CompressionCAE(nn.Module):
+class CompressionCAEMidCapacity(nn.Module):
     def __init__(self, in_chans: int):
         super().__init__()
         assert isinstance(in_chans, int), f'in_chans must be of type int, got {type(in_chans)}'
@@ -53,23 +53,23 @@ class CompressionCAE(nn.Module):
         # Encoding layers
         self.encoder = nn.Sequential(
             EncodingBlock(in_chans, 24),
-            EncodingBlock(24, 24, dilation=2),
+            EncodingBlock(24, 24, kernel_size=5, padding=2),
             EncodingBlock(24, 48, stride=2),
-            EncodingBlock(48, 48, dilation=2),
+            EncodingBlock(48, 48, kernel_size=5, padding=2),
             EncodingBlock(48, 24, stride=2),
-            EncodingBlock(24, 24, dilation=2),
+            EncodingBlock(24, 24, kernel_size=5, padding=2),
             EncodingBlock(24, 8, stride=2),
             nn.Conv2d(8, 1, kernel_size=3, padding=1),
         )
-
+        # Decoding layers
         self.decoder = nn.Sequential(
-            DecodingBlock(1, 8),
+            DecodingBlock(1, 8, kernel_size=3, padding=1),
             DecodingBlock(8, 24, stride=2),
-            DecodingBlock(24, 24, dilation=2),
+            DecodingBlock(24, 24, kernel_size=5, padding=2),
             DecodingBlock(24, 48, stride=2, output_padding=1),
-            DecodingBlock(48, 48, dilation=2, output_padding=1),
+            DecodingBlock(48, 48, kernel_size=5, padding=2),
             DecodingBlock(48, 24, stride=2, output_padding=1),
-            DecodingBlock(24, 24, dilation=2),
+            DecodingBlock(24, 24, kernel_size=5, padding=2),
             nn.Conv2d(24, in_chans, kernel_size=3, padding=1),
             nn.Tanh()
         )
@@ -81,3 +81,42 @@ class CompressionCAE(nn.Module):
         x = self.decoder(x)
         assert x.shape == in_shape, f'Input and output shapes must match: {in_shape} != {x.shape}'
         return x
+
+
+class CompressionCAEHighCapacity(nn.Module):
+    def __init__(self, in_chans: int):
+        super().__init__()
+        assert isinstance(in_chans, int), f'in_chans must be of type int, got {type(in_chans)}'
+
+        # Encoding layers
+        self.encoder = nn.Sequential(
+            EncodingBlock(in_chans, 64),
+            EncodingBlock(64, 128, kernel_size=5, padding=2),
+            EncodingBlock(128, 256, stride=2),
+            EncodingBlock(256, 256, kernel_size=5, padding=2),
+            EncodingBlock(256, 256, stride=2),
+            EncodingBlock(256, 128, kernel_size=5, padding=2),
+            EncodingBlock(128, 64, stride=2),
+            nn.Conv2d(64, 1, kernel_size=3, padding=1),
+        )
+        # Decoding Layers
+        self.decoder = nn.Sequential(
+            DecodingBlock(1, 64, kernel_size=3, padding=1),
+            DecodingBlock(64, 128, stride=2),
+            DecodingBlock(128, 256, kernel_size=5, padding=2),
+            DecodingBlock(256, 256, stride=2, output_padding=1),
+            DecodingBlock(256, 256, kernel_size=5, padding=2),
+            DecodingBlock(256, 128, stride=2, output_padding=1),
+            DecodingBlock(128, 64, kernel_size=5, padding=2),
+            nn.Conv2d(64, in_chans, kernel_size=3, padding=1),
+            nn.Tanh()
+        )
+
+    def forward(self, x):
+        in_shape = x.shape
+        # Simple encoding into latent representation and decoding back to input space
+        x = self.encoder(x)
+        x = self.decoder(x)
+        assert x.shape == in_shape, f'Input and output shapes must match: {in_shape} != {x.shape}'
+        return x
+

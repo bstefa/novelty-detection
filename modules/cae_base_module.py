@@ -17,6 +17,7 @@ class CAEBaseModule(pl.LightningModule):
         super(CAEBaseModule, self).__init__()
 
         self.model = model
+
         self.lr = learning_rate if learning_rate is not None else 0.001
         self.wd = weight_decay_coefficient if weight_decay_coefficient is not None else 0.01
 

@@ -2,7 +2,7 @@
 experiment-parameters:
 
   # name (required, str): The name of the experiment. Typically best to align with the model being used.
-  model: 'CompressionCAE'
+  model: 'CompressionCAEMidCapacity'
 
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
@@ -28,14 +28,14 @@ data-parameters:
 
   # batch_size (optional, int, default=8): Number of samples to be used in each iteration.
   # Set to null for default.
-  batch_size: 256
+  batch_size: 1024
 
 
 # module-parameters: Contains hyperparameters used when training the model.
 module-parameters:
 
   # learning_rate (optional, float, default='auto'): Scaling factor for gradient descent step.
-  # Set to 'auto' for default.
+  # Set to null for default.
   learning_rate: null
 
   # weight_decay_coefficient (optional, float, default=0.01): Scaling factor for loss regularization term.

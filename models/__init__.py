@@ -1,7 +1,8 @@
 from .cae_baseline import BaselineCAE
-from .cae_compression import CompressionCAE
+from .cae_compression import CompressionCAEMidCapacity, CompressionCAEHighCapacity
 
 supported_models = {
     'BaselineCAE': BaselineCAE,
-    'CompressionCAE': CompressionCAE
+    'CompressionCAEMidCapacity': CompressionCAEMidCapacity,
+    'CompressionCAEHighCapacity': CompressionCAEHighCapacity
 }
