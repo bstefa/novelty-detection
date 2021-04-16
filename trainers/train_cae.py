@@ -17,14 +17,13 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 
 from utils import tools, callbacks
 from modules.cae_base_module import CAEBaseModule
-from models.cae_baseline import BaselineCAE
 from datasets import supported_datamodules
 from models import supported_models
 
 
 def main():
     # Set defaults
-    config = tools.config_from_command_line(DEFAULT_CONFIG_FILE)
+    config = tools.load_config(DEFAULT_CONFIG_FILE)
     # Unpack configuration
     exp_params = config['experiment-parameters']
     data_params = config['data-parameters']
@@ -42,6 +41,7 @@ def main():
     # when calling '.data_shape', the actual batch shape discrepancy is is handled implicitly
     # in the DataIntegrityCallback
     model = supported_models[exp_params['model']](datamodule.data_shape[0])
+    # model_summary = str(model)
 
     # Initialize experimental module
     module = CAEBaseModule(model, **module_params)
@@ -55,7 +55,7 @@ def main():
     trainer = pl.Trainer(
         gpus=1,
         logger=logger,
-        max_epochs=100,
+        max_epochs=1000,
         weights_summary=None,
         callbacks=[
             pl.callbacks.EarlyStopping(
@@ -80,9 +80,10 @@ def main():
 
     # Some final saving once training is complete
     try:
+        tools.save_object_to_version(config, version=module.version, filename='configuration.yaml', **exp_params)
+        tools.save_object_to_version(str(model), version=module.version, filename='model_summary.txt', **exp_params)
         if 'lr_finder_fig' in locals():
             tools.save_object_to_version(lr_finder_fig, version=module.version, filename='lr-find.eps', **exp_params)
-        tools.save_object_to_version(config, version=module.version, filename='configuration.yaml', **exp_params)
     except TypeError as e:
         print(e)
         pass

@@ -1,9 +1,7 @@
 """
 A mix and match of useful tools for the repo
 """
-import cv2 as cv
 import numpy as np
-import torch
 import torch.nn.functional as F
 import sys
 import yaml
@@ -15,8 +13,12 @@ from utils.dtypes import *
 from utils import dtypes
 
 
-def config_from_command_line(default_config: str):
-    """Use this function to read configurations for training scripts"""
+def load_config(default_config: str, silent=False):
+    """
+    Multi-use function. Exposes command-line to provide alternative configurations to training scripts.
+    Also works as a stand-alone configuration importer in notebooks and scripts.
+    # TODO: Create reference in README for this function.
+    """
     if len(sys.argv) == 1:
         # Then the file being called is the only argument so return the default configuration
         config_file = default_config
@@ -31,38 +33,25 @@ def config_from_command_line(default_config: str):
 
     with open(str(config_file), 'r') as f:
         y = yaml.full_load(f)
-        print(f'Experimental parameters\n------')
-        pprint(y)
+        if not silent:
+            print(f'Experimental parameters\n------')
+            pprint(y)
         return y
 
 
-def config_from_file(config_file: str):
-    """Use this function to read configurations in Jupyter Notebooks"""
-    with open(str(config_file)) as f:
-        y = yaml.full_load(f)
-        print(f'Experimental parameters\n------')
-        pprint(y)
-        return y
-
-
-def save_object_to_version(
-        obj,
-        version: int,
-        filename: str,
-        log_dir: str = 'logs',
-        model: str = 'Unnamed',
-        datamodule: str = 'Unknown',
-        **kwargs):
+def save_object_to_version(obj, version: int, filename: str, log_dir='logs', model='Unnamed', datamodule='Unknown', **kwargs):
     save_path = Path(log_dir) / datamodule / model / f'version_{version}'
-    if isinstance(obj, dtypes.Figure):
+    if isinstance(obj, str):
+        f = open(save_path/filename, 'wt')
+        f.write(obj)
+        f.close()
+    elif isinstance(obj, dtypes.Figure):
         obj.savefig(save_path/filename, format='eps')
-    if isinstance(obj, dict):
+    elif isinstance(obj, dict):
         with open(str(save_path/filename), 'w') as f:
             yaml.dump(obj, f)
-
-
-def calc_out_size(in_size, padding, kernel_size, dilation, stride):
-    return ((in_size + 2*padding - dilation*(kernel_size-1) - 1) / stride) + 1
+    else:
+        raise Exception('No correct types were found, not saving...')
 
 
 class PathGlobber:
@@ -77,13 +66,6 @@ class PathGlobber:
         for pat in patterns:
             list_of_paths.extend(self.path.glob(pat))
         return list_of_paths
-
-
-def chw2hwc(x):
-    if isinstance(x, torch.Tensor):
-        return x.permute(1, 2, 0)
-    if isinstance(x, np.array):
-        return np.transpose(x, (1, 2, 0))
 
 
 def unstandardize_batch(batch_in: torch.Tensor, tol: float = 0.001):

@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 def main():
     # Load configs
     print('[INFO] Loading configs...')
-    config = tools.config_from_command_line(DEFAULT_CONFIG_FILE)
+    config = tools.load_config(DEFAULT_CONFIG_FILE)
     # Unpack configuration
     exp_params = config['experiment-parameters']
     data_params = config['data-parameters']
