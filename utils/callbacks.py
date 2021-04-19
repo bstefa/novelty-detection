@@ -151,6 +151,7 @@ class AAEVisualization(pl.callbacks.base.Callback):
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if self._save_at_train_step == pl_module.global_step:
+
             batch_in, _ = batch
             batch_in = batch_in.detach()
             image_shape = batch_in.shape
@@ -161,6 +162,7 @@ class AAEVisualization(pl.callbacks.base.Callback):
             if trainer.datamodule.name == 'CuriosityDataModule':
                 batch_in = batch_in[:, [2, 0, 1]]
                 batch_rc = batch_rc[:, [2, 0, 1]]
+
             images = {
                 'batch_in': batch_in.reshape(image_shape),
                 'batch_rc': batch_rc.reshape(image_shape)
@@ -176,7 +178,6 @@ class VAEVisualization(pl.callbacks.base.Callback):
         if batch_idx == 1 and pl_module.logger.version is not None:
             batch_in, _ = batch
             batch_in = batch_in.detach().to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-            logging.debug(f'VAL BATCH SHAPE--{batch_in.shape}')
 
             index = torch.randint(len(batch_in), size=(1,))
             self.sample_images(batch_in[index], pl_module)
@@ -194,7 +195,6 @@ class VAEVisualization(pl.callbacks.base.Callback):
             os.mkdir(logger_save_path)
 
         # Get sample reconstruction image
-        logging.debug(f'SAMPLE BATCH IN SHAPE--{batch_in.shape}')
         batch_rc = pl_module.model.generate(batch_in)
         grid = torch.cat((batch_in, batch_rc))
         vutils.save_image(
