@@ -1,4 +1,8 @@
+import torch
 import torch.nn as nn
+
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class EncodingBlock(nn.Module):
@@ -44,6 +48,7 @@ class DecodingBlock(nn.Module):
 class BaselineCAE(nn.Module):
     def __init__(self, in_chans: int):
         super().__init__()
+        assert isinstance(in_chans, int), f'in_chans must be of type int, got {type(in_chans)}'
 
         # Encoding layers
         self.encoder = nn.Sequential(
