@@ -11,9 +11,7 @@ Uses:
 """
 import os
 import pytorch_lightning as pl
-
 import logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 from utils import tools, callbacks
 from modules.cae_base_module import CAEBaseModule
@@ -89,5 +87,6 @@ def main():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
     DEFAULT_CONFIG_FILE = 'configs/cae/cae_baseline_lunar_analogue.yaml'
     main()

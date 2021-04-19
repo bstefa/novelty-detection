@@ -9,6 +9,7 @@ import os
 import torch
 import torchvision
 import pytorch_lightning as pl
+import torchvision.utils as vutils
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -80,7 +81,7 @@ def _log_images(compute: dict, pl_module):
 
 
 def _handle_image_logging(images: dict, pl_module) -> None:
-    assert pl_module.logger.version is not None, 'Logging cannot proceed without a verison number.'
+    assert pl_module.logger.version is not None, 'Logging cannot proceed without a version number.'
 
     batch_in_01 = tools.unstandardize_batch(images['batch_in'])
     batch_rc_01 = tools.unstandardize_batch(images['batch_rc'])
@@ -145,6 +146,7 @@ class AAEVisualization(pl.callbacks.base.Callback):
 
     def on_epoch_start(self, trainer, pl_module):
         # Save images at second training step every epoch
+        # (uses +4 because there are two dummy steps at the beginning of each epoch)
         self._save_at_train_step = pl_module.global_step + 4
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
@@ -164,3 +166,52 @@ class AAEVisualization(pl.callbacks.base.Callback):
                 'batch_rc': batch_rc.reshape(image_shape)
             }
             _handle_image_logging(images, pl_module)
+
+
+class VAEVisualization(pl.callbacks.base.Callback):
+    def __init__(self):
+        pass
+
+    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+        if batch_idx == 1 and pl_module.logger.version is not None:
+            batch_in, _ = batch
+            batch_in = batch_in.detach().to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+            logging.debug(f'VAL BATCH SHAPE--{batch_in.shape}')
+
+            index = torch.randint(len(batch_in), size=(1,))
+            self.sample_images(batch_in[index], pl_module)
+
+    @staticmethod
+    def sample_images(batch_in, pl_module):
+        logger_save_path = os.path.join(
+            pl_module.logger.save_dir,
+            pl_module.logger.name,
+            f'version_{pl_module.logger.version}',
+            'images'
+        )
+
+        if not os.path.exists(logger_save_path):
+            os.mkdir(logger_save_path)
+
+        # Get sample reconstruction image
+        logging.debug(f'SAMPLE BATCH IN SHAPE--{batch_in.shape}')
+        batch_rc = pl_module.model.generate(batch_in)
+        grid = torch.cat((batch_in, batch_rc))
+        vutils.save_image(
+            grid,
+            os.path.join(
+                logger_save_path,
+                f'epoch={pl_module.current_epoch}-step={pl_module.global_step}-recons.png'),
+            normalize=True,
+            nrow=1)
+
+        samples = pl_module.model.sample(num_samples=144)
+        vutils.save_image(
+            samples,
+            os.path.join(
+                logger_save_path,
+                f'epoch={pl_module.current_epoch}-step={pl_module.global_step}-samples.png'),
+            normalize=True,
+            nrow=12)
+
+        del batch_rc

@@ -1,12 +1,8 @@
-import os
-import torch
 import torch.nn as nn
-import torchvision.utils as vutils
 import pytorch_lightning as pl
-import torchvision
 
 from utils.dtypes import *
-import torchvision.transforms.functional as TF
+
 
 class VAEBaseModule(pl.LightningModule):
     def __init__(
@@ -34,7 +30,6 @@ class VAEBaseModule(pl.LightningModule):
     def training_step(self, batch, batch_idx, optimizer_idx=0):
 
         images, labels = batch
-
         # Results is a list of outputs computed during the forward pass
         # of the form: [reconstructions, input, mu, log_var]
         results_list = self.forward(images, labels=labels)
@@ -59,10 +54,6 @@ class VAEBaseModule(pl.LightningModule):
             optimizer_idx=optimizer_idx,
             batch_idx=batch_idx)
 
-        if batch_idx == 0 and self.version is not None:
-            index = torch.randint(len(real_img), (1,1)).numpy()
-            self.sample_images(real_img[index], labels[index])
-
         return val_loss_dict
 
     def validation_epoch_end(self, outputs):
@@ -76,38 +67,7 @@ class VAEBaseModule(pl.LightningModule):
 
         pass
 
-    def sample_images(self, real_img: Tensor, label: Tensor):
-        # Get sample reconstruction image
-
-        recons = self.model.generate(real_img)
-        
-        # real_img = TF.rotate(real_img, -90)
-        # recons = TF.rotate(recons, -90)
-        # real_img = TF.hflip(real_img)
-        # recons = TF.hflip(recons)
-
-        grid = torch.cat((real_img, recons))
-
-        vutils.save_image(
-            grid,
-            f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
-            f"media/recons_{self.logger.name}_{self.current_epoch}.png",
-            normalize=True,
-            nrow=1)
-
-        
-        samples = self.model.sample(num_samples=144)
-
-        vutils.save_image(
-            samples,
-            f"{self.logger.save_dir}/{self.logger.name}/version_{self.logger.version}/"
-            f"media/random_{self.logger.name}_{self.current_epoch}.png",
-            normalize=True,
-            nrow=12)
-            
-        del recons
-
-    def test_step(self, batch, batch_nb, loss):
+    def test_step(self, batch, batch_nb):
         batch_in, batch_labels = batch
         recons = self.model.generate(batch_in)
 
@@ -121,8 +81,6 @@ class VAEBaseModule(pl.LightningModule):
         }
 
         return results_dict
-
-
 
     @property
     def version(self):

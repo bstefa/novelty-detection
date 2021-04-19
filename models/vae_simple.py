@@ -1,8 +1,5 @@
-import torch
-
 from torch import nn
 from torch.nn import functional as F
-from utils import tools
 from utils.dtypes import *
 
 
@@ -77,14 +74,14 @@ class SimpleVAE(nn.Module):
 
         return result
 
-    def reparametrize(self, mu: Tensor, log_var: Tensor) -> Tensor:
+    @staticmethod
+    def reparameterize(mu: Tensor, log_var: Tensor) -> Tensor:
         """
         Reparametrization trick to enable back propagation while maintaining 
         stochasticity by injecting a randomly sampled variable 
 
         z = mu + std*eps
         """
-
         std = torch.exp(0.5 * log_var)
         eps = torch.randn_like(std)
 
@@ -97,11 +94,12 @@ class SimpleVAE(nn.Module):
         """
 
         mu, log_var = self.encode(input)
-        z = self.reparametrize(mu, log_var)
+        z = self.reparameterize(mu, log_var)
 
         return [self.decode(z), input, mu, log_var]
 
-    def loss_function(self, *args, **kwargs) -> dict:
+    @staticmethod
+    def loss_function(*args, **kwargs) -> dict:
         """
         Compute Evidence Lower Bound (elbo) loss
 

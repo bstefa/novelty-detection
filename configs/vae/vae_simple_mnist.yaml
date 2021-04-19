@@ -2,7 +2,7 @@
 experiment-parameters:
 
   # name (required, str): The name of the experiment. Typically best to align with the model being used.
-  name: 'VAESimple'
+  model: 'SimpleVAE'
 
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
@@ -10,12 +10,17 @@ experiment-parameters:
   # datamodule (required, str): The datamodule (or datagenerator) to use for your experiment.
   datamodule: 'NoveltyMNISTDataModule'
 
+  # patience (optional, int, default=5) Determines when to conduct early stopping based on lowest validation loss.
+  # Set to null for default.
+  patience: null
+
 
 # data-parameters: Contains information used for preparing and loading the data.
 data-parameters:
 
   # root_data_path (required, str): Path to the common directory node immediately before training and testing branches.
-  root_data_path: '/home/fenrir/Documents/Datasets/NoveltyMNIST'
+  ###root_data_path: '/home/fenrir/Documents/Datasets/NoveltyMNIST'
+  root_data_path: '/home/brahste/Datasets/NoveltyMNIST'
 
   # train_fraction (optional, float, default=0.8): Fraction of training samples to be used for
   # training, the rest will be used for validation. Set to null for default.
@@ -25,16 +30,13 @@ data-parameters:
   # Set to null for default.
   batch_size: 128
 
-  # Download dataset flag
-  download: True
-
 
 # module-parameters: Contains hyperparameters used when training the model.
 module-parameters:
 
   # learning_rate (optional, float, default='auto'): Scaling factor for gradient descent step.
   # Set to 'auto' for default.
-  learning_rate: 0.001
+  learning_rate: null
 
   # latent_dims (required, int): Number of dimensions to use in the latent space of the VAE
   latent_dims: 10
