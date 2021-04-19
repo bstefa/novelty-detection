@@ -39,16 +39,17 @@ def load_config(default_config: str, silent=False):
         return y
 
 
-def save_object_to_version(obj, version: int, filename: str, log_dir='logs', model='Unnamed', datamodule='Unknown', **kwargs):
+def save_object_to_version(obj, version: int, filename: str, log_dir='logs', model='Unnamed', datamodule='Unknown',
+                           **kwargs):
     save_path = Path(log_dir) / datamodule / model / f'version_{version}'
     if isinstance(obj, str):
-        f = open(save_path/filename, 'wt')
+        f = open(save_path / filename, 'wt')
         f.write(obj)
         f.close()
     elif isinstance(obj, dtypes.Figure):
-        obj.savefig(save_path/filename, format='eps')
+        obj.savefig(save_path / filename, format='eps')
     elif isinstance(obj, dict):
-        with open(str(save_path/filename), 'w') as f:
+        with open(str(save_path / filename), 'w') as f:
             yaml.dump(obj, f)
     else:
         raise Exception('No correct types were found, not saving...')
@@ -127,6 +128,21 @@ def get_error_map(x_input, x_output, tol: float = 0.001):
     if isinstance(x_output, np.ndarray):
         x_err = x_input - x_output
         return x_err / np.max(np.abs(x_err))
+
+
+def prepare_log_path(log_dir, datamodule, model, **kwargs):
+    log_path = Path.cwd() / log_dir / datamodule / model
+    version, v = next_version(log_path)
+    if not (log_path / version).is_dir():
+        (log_path / version).mkdir(exist_ok=True, parents=True)
+    return log_path, version, v
+
+
+def next_version(path: str):
+    v = 0
+    while (Path(path) / f'version_{v}').is_dir():
+        v += 1
+    return f'version_{v}', v
 
 
 if __name__ == '__main__':
