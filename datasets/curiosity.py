@@ -21,7 +21,8 @@ import numpy as np
 
 from datasets.base import BaseDataModule
 from torchvision import transforms
-from utils import tools
+from utils import tools, preprocessing
+
 
 class CuriosityDataset(torch.utils.data.Dataset):
     def __init__(
@@ -77,7 +78,7 @@ class CuriosityDataModule(BaseDataModule):
         self._val_fraction = 1 - self._train_fraction
 
         self._data_transforms = transforms.Compose([
-            tools.CuriosityPreprocessingPipeline(),
+            preprocessing.CuriosityPreprocessingPipeline(),
             transforms.ToTensor()])
 
     def prepare_data(self):
