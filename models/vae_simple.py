@@ -1,8 +1,5 @@
-import torch
-
 from torch import nn
 from torch.nn import functional as F
-from utils import tools
 from utils.dtypes import *
 
 
@@ -52,91 +49,76 @@ class SimpleVAE(nn.Module):
             nn.Conv2d(16, 1, kernel_size=3, padding=1),
             nn.Tanh())
 
-    def encode(self, input: Tensor) -> List[Tensor]:
+    def encode(self, x: Tensor) -> tuple:
         """
-        Receives an input image and outputs the mean and the logvar for the distribution q(z|x)
+        Receives an input image (x) and outputs the mean (mu) and log-variance (log_var) for the distribution q(z|x)
         """
-        result = self.encoder(input)
-        result = torch.flatten(result, start_dim=1)
+        z = self.encoder(x)
+        z = torch.flatten(z, start_dim=1)
 
-        # Split the result into mu and var components
-        # of the latent Gaussian distribution
-        mu = self.fc_mu(result)
-        log_var = self.fc_var(result)
-
-        return [mu, log_var]
+        # Split the result into mean (mu) and variance (log_var) of the latent Gaussian distribution
+        mu = self.fc_mu(z)
+        log_var = self.fc_var(z)
+        return mu, log_var
 
     def decode(self, z: Tensor) -> Tensor:
         """
         Receives a variable sampled from q(z) and transforms it back to p(x|z)
         """
-        result = self.decoder_input(z)
-        result = result.view(-1, 64, 4, 4)
-        result = self.decoder(result)
-        result = self.final_layer(result)
+        x_hat = self.decoder_input(z)
+        x_hat = x_hat.view(-1, 64, 4, 4)
+        x_hat = self.decoder(x_hat)
+        x_hat = self.final_layer(x_hat)
+        return x_hat
 
-        return result
-
-    def reparametrize(self, mu: Tensor, log_var: Tensor) -> Tensor:
+    @staticmethod
+    def reparameterize(mu: Tensor, log_var: Tensor) -> Tensor:
         """
         Reparametrization trick to enable back propagation while maintaining 
         stochasticity by injecting a randomly sampled variable 
 
         z = mu + std*eps
         """
-
         std = torch.exp(0.5 * log_var)
         eps = torch.randn_like(std)
-
         return mu + std * eps
 
-    def forward(self, input: Tensor, **kwargs) -> List[Tensor]:
+    def forward(self, x: Tensor) -> tuple:
         """
         Receives an input image and returns the reconstruction, input image,
         and the mean and logvar of the Gaussian q(z|x)
         """
+        mu, log_var = self.encode(x)
+        z = self.reparameterize(mu, log_var)
+        x_hat = self.decode(z)
+        return x_hat, mu, log_var
 
-        mu, log_var = self.encode(input)
-        z = self.reparametrize(mu, log_var)
-
-        return [self.decode(z), input, mu, log_var]
-
-    def loss_function(self, *args, **kwargs) -> dict:
+    @staticmethod
+    def loss_function(batch_rc: Tensor, batch_in: Tensor, mu: Tensor, log_var: Tensor, **kwargs) -> tuple:
         """
         Compute Evidence Lower Bound (elbo) loss
-
         elbo = reconstruction loss + Kullback-Leibler divergence
         """
-
-        reconstruction = args[0]
-        input = args[1]
-        mu = args[2]
-        log_var = args[3]
+        reconstruction_loss = F.mse_loss(batch_rc, batch_in)
 
         kld_weight = kwargs['M_N']  # Account for the minibatch samples from the dataset
-        reconstruction_loss = F.mse_loss(reconstruction, input)
-
         kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
 
         elbo_loss = reconstruction_loss + kld_weight * kld_loss
 
-        return {'loss': elbo_loss, 'reconstruction_loss': reconstruction_loss, 'KLD': -kld_loss}
+        return elbo_loss, reconstruction_loss, -kld_loss
 
-    def sample(self, num_samples: int, current_device: int, **kwargs) -> Tensor:
+    def sample(self, num_samples: int, **kwargs) -> Tensor:
         """
         Sample z from latent space q(z) and return reconstruction p(x|z)
         """
-
-        z = torch.randn(num_samples, self._latent_dims)
-        z = z.to(current_device)
-
+        z = torch.randn(num_samples, self._latent_dims, device=torch.device('cuda'))
         samples = self.decode(z)
-
         return samples
 
     def generate(self, x: Tensor, **kwargs) -> Tensor:
         """
         Sample from q(z|x) and return reconstruction p(x|z)
         """
-
-        return self.forward(x)[0]
+        x_hat, _, _ = self.forward(x)
+        return x_hat
