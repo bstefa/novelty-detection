@@ -42,10 +42,18 @@ class BaseDataModule(pl.LightningDataModule):
         return self._batch_size
 
     @property
-    def shape(self):
+    def data_shape(self):
         conditions = [hasattr(self, '_test_set'), hasattr(self, '_train_set')]
         assert any(conditions), 'Need to call .setup before shape is available'
         try:
-            return self._train_set[0][0].shape
+            # First [0] accesses image from (image,label) tuple, second [0] accesses batch element
+            data_shape = self._train_set[0][0].shape
         except AttributeError:
-            return self._test_set[0][0].shape
+            data_shape = self._test_set[0][0].shape
+
+        if len(data_shape) == 3:
+            return data_shape
+        elif len(data_shape) == 4:
+            return data_shape[len(data_shape)-3:]
+        else:
+            raise ValueError('Only data shapes with 3 or 4 dimensions are accepted')

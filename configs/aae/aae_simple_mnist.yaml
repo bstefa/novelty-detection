@@ -2,13 +2,17 @@
 experiment-parameters:
 
   # name (required, str): The name of the experiment. Typically best to align with the model being used.
-  name: 'AAESimple'
+  model: 'SimpleAAE'
 
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
 
   # datamodule (required, str): The datamodule (or datagenerator) to use for your experiment.
   datamodule: 'NoveltyMNISTDataModule'
+
+  # patience (optional, int, default=5) Determines when to conduct early stopping based on lowest validation loss.
+  # Set to null for default.
+  patience: null
 
 # data-parameters: Contains information used for preparing and loading the data.
 data-parameters:
@@ -22,7 +26,7 @@ data-parameters:
 
   # batch_size (optional, int, default=8): Number of samples to be used in each iteration.
   # Set to null for default.
-  batch_size: 128
+  batch_size: 1024
 
 
 # module-parameters: Contains hyperparameters used when training the model.
@@ -37,5 +41,5 @@ module-parameters:
   weight_decay_coefficient: 0.0001
 
   # latent_dims (required, int): Number of dimensions to use in the latent space of the VAE
-  latent_dims: 10
+  latent_nodes: 8
 

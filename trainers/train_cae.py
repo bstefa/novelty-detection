@@ -12,15 +12,18 @@ Uses:
 import os
 import pytorch_lightning as pl
 
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
 from utils import tools, callbacks
 from modules.cae_base_module import CAEBaseModule
-from models.cae_baseline import BaselineCAE
 from datasets import supported_datamodules
+from models import supported_models
 
 
 def main():
     # Set defaults
-    config = tools.config_from_command_line(DEFAULT_CONFIG_FILE)
+    config = tools.load_config(DEFAULT_CONFIG_FILE)
     # Unpack configuration
     exp_params = config['experiment-parameters']
     data_params = config['data-parameters']
@@ -30,10 +33,14 @@ def main():
     datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
     datamodule.prepare_data()
     datamodule.setup('train')
+    logging.debug(datamodule.data_shape)
 
-    # Initialize model with the number of channels in the data (note that torch uses
-    # the convention of shaping data as [C, H, W] as opposed to the usual [H, W, C]
-    model = BaselineCAE(in_chans=datamodule.shape[0])
+    # Note that Pytorch uses the convention of shaping data as [..., C, H, W] as opposed
+    # to [..., H, W, C]. When using a region extractor, the shaoe of the returned data may
+    # be [n_regions, C, H, W]. The BaseDataModule class always returns the last three channels
+    # when calling '.data_shape', the actual batch shape discrepancy is is handled implicitly
+    # in the DataIntegrityCallback
+    model = supported_models[exp_params['model']](datamodule.data_shape[0])
 
     # Initialize experimental module
     module = CAEBaseModule(model, **module_params)
@@ -41,17 +48,23 @@ def main():
     # Initialize loggers to monitor training and validation
     logger = pl.loggers.TensorBoardLogger(
         exp_params['log_dir'],
-        name=os.path.join(exp_params['name'], exp_params['datamodule']))
+        name=os.path.join(exp_params['datamodule'], exp_params['model']))
 
     # Initialize the Trainer object
     trainer = pl.Trainer(
         gpus=1,
         logger=logger,
-        max_epochs=100,
+        max_epochs=1000,
+        weights_summary=None,
         callbacks=[
-            pl.callbacks.EarlyStopping(monitor='val_loss', patience=4),
+            pl.callbacks.EarlyStopping(
+                monitor='val_loss',
+                patience=5 if exp_params['patience'] is None else exp_params['patience']),
             pl.callbacks.GPUStatsMonitor(),
-            pl.callbacks.ModelCheckpoint(monitor='val_loss', filename='{val_loss:.2f}-{epoch}', save_last=True),
+            pl.callbacks.ModelCheckpoint(
+                monitor='val_loss',
+                filename='{val_loss:.2f}-{epoch}',
+                save_last=True),
             callbacks.VisualizationCallback()
         ]
     )
@@ -65,9 +78,14 @@ def main():
     trainer.fit(module, datamodule)
 
     # Some final saving once training is complete
-    if 'lr_finder_fig' in locals():
-        tools.save_object_to_version(lr_finder_fig, version=module.version, filename='lr-find.eps', **exp_params)
-    tools.save_object_to_version(config, version=module.version, filename='configuration.yaml', **exp_params)
+    try:
+        tools.save_object_to_version(config, version=module.version, filename='configuration.yaml', **exp_params)
+        tools.save_object_to_version(str(model), version=module.version, filename='model_summary.txt', **exp_params)
+        if 'lr_finder_fig' in locals():
+            tools.save_object_to_version(lr_finder_fig, version=module.version, filename='lr-find.eps', **exp_params)
+    except TypeError as e:
+        print(e)
+        pass
 
 
 if __name__ == '__main__':
