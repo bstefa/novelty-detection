@@ -41,7 +41,6 @@ def main():
     # when calling '.data_shape', the actual batch shape discrepancy is is handled implicitly
     # in the DataIntegrityCallback
     model = supported_models[exp_params['model']](datamodule.data_shape[0])
-    # model_summary = str(model)
 
     # Initialize experimental module
     module = CAEBaseModule(model, **module_params)
