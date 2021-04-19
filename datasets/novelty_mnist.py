@@ -2,7 +2,7 @@ import os
 import torch
 
 from typing import Optional
-from utils import tools
+from utils import preprocessing
 
 from datasets.base import BaseDataModule
 
@@ -57,7 +57,7 @@ class NoveltyMNISTDataModule(BaseDataModule):
         self._root_data_path = root_data_path
         self._batch_size = batch_size if batch_size is not None else 8
         self._train_fraction = train_fraction if train_fraction is not None else 0.8
-        self._data_transforms = tools.NoveltyMNISTPreprocessingPipeline()
+        self._data_transforms = preprocessing.NoveltyMNISTPreprocessingPipeline()
 
     def prepare_data(self):
         pass
@@ -75,7 +75,7 @@ class NoveltyMNISTDataModule(BaseDataModule):
             # Since setup is called from every process, setting state here is okay
             self._train_set, self._val_set = torch.utils.data.random_split(trainval_set, [train_size, val_size])
 
-        elif stage == 'test' or stage is None:
+        elif stage == 'test':
             self._test_set = NoveltyMNISTDataset(
                 self._root_data_path,
                 train=False,

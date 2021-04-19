@@ -4,6 +4,7 @@ lightning_logs/
 .idea/
 saved-models/
 logs/
+test_logs/
 
 # Scrap testing files
 utils/scripts/*.ipynb

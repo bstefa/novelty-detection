@@ -4,6 +4,10 @@ import pytorch_lightning as pl
 
 from utils.dtypes import *
 
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
 class CAEBaseModule(pl.LightningModule):
     def __init__(
             self,
@@ -13,8 +17,9 @@ class CAEBaseModule(pl.LightningModule):
         super(CAEBaseModule, self).__init__()
 
         self.model = model
+
         self.lr = learning_rate if learning_rate is not None else 0.001
-        self.wd = weight_decay_coefficient
+        self.wd = weight_decay_coefficient if weight_decay_coefficient is not None else 0.01
 
         # Return a callable torch.nn.XLoss object
         # TODO: Add the ability to quickly change the loss function being implemented (e.g. SSIM)
@@ -28,7 +33,7 @@ class CAEBaseModule(pl.LightningModule):
 
     def training_step(self, batch, batch_nb):
 
-        batch_in, _ = batch
+        batch_in, _ = self.handle_batch(batch)
 
         batch_rc = self.forward(batch_in)
         loss = self.loss_function(batch_rc, batch_in)
@@ -38,7 +43,7 @@ class CAEBaseModule(pl.LightningModule):
 
     def validation_step(self, batch, batch_nb):
 
-        batch_in, _ = batch
+        batch_in, _ = self.handle_batch(batch)
 
         batch_rc = self.forward(batch_in)
         loss = self.loss_function(batch_rc, batch_in)
@@ -49,7 +54,8 @@ class CAEBaseModule(pl.LightningModule):
     def test_step(self, batch, batch_nb):
 
         batch_in, batch_labels = batch
-        batch_rc = self.forward(batch_in)
+        batch_lt = self.model.encoder(batch_in)
+        batch_rc = self.model.decoder(batch_lt)
         loss = self.loss_function(batch_rc, batch_in)
 
         # Calculate individual novelty scores
@@ -63,10 +69,22 @@ class CAEBaseModule(pl.LightningModule):
             'scores': batch_scores,
             'labels': batch_labels,
             'images': {
-                'batch_in': batch_in.detach(),  # Tensor
-                'batch_rc': batch_rc.detach()  # Tensor
+                'batch_in': batch_in.detach(),
+                'batch_rc': batch_rc.detach(),
+                'batch_lt': batch_lt.detach()
             }
         }
+
+    @staticmethod
+    def handle_batch(batch):
+        '''
+        Conducts an inplace operation to merge regions and batch size if neceassary
+        '''
+        batch_in, _ = batch
+        assert any(len(batch_in.shape) == s for s in (4, 5)), f'Batch must have 4 or 5 dims, got {len(batch_in.shape)}'
+        if len(batch_in.shape) == 5:
+            batch_in = batch_in.view(-1, *batch_in.shape[2:])
+        return batch_in, _
 
     @property
     def version(self):
