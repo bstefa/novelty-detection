@@ -62,7 +62,7 @@ class Discriminator(nn.Module):
 
 
 class SimpleAAE(nn.Module):
-    def __init__(self, in_nodes: int, latent_nodes: int = 8, **kwargs):
+    def __init__(self, in_nodes: int, latent_nodes: int = 8):
         super().__init__()
 
         self.encoder = Encoder(in_nodes=in_nodes, latent_nodes=latent_nodes)

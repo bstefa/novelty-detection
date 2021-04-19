@@ -11,7 +11,7 @@ from models.cae_baseline import BaselineCAE
 class TestNoveltyMNISTData(unittest.TestCase):
 
     def setUp(self):
-        self.cae_config = tools.config_from_file('configs/cae/cae_baseline_mnist.yaml')
+        self.cae_config = tools.load_config('configs/cae/cae_baseline_mnist.yaml', silent=True)
         self.dm = supported_datamodules['NoveltyMNISTDataModule'](**self.cae_config['data-parameters'])
 
     def test_datamodule_instantiation(self):

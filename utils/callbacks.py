@@ -16,7 +16,7 @@ from utils import tools
 
 
 def learning_rate_finder(trainer, module, datamodule, **kwargs):
-    lr_finder = trainer.tuner.lr_find(module, datamodule)
+    lr_finder = trainer.tuner.lr_find(module, datamodule, **kwargs)
     suggested_lr = lr_finder.suggestion()
     lr_finder_fig = lr_finder.plot(suggest=True, show=False)
 
@@ -154,8 +154,8 @@ class AAEVisualization(pl.callbacks.base.Callback):
             image_shape = batch_in.shape
 
             batch_in = batch_in.view(image_shape[0], -1)
-            latent_vec = pl_module.encoder(batch_in.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
-            batch_rc = pl_module.decoder(latent_vec)
+            batch_lt = pl_module.encoder(batch_in.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
+            batch_rc = pl_module.decoder(batch_lt)
             if trainer.datamodule.name == 'CuriosityDataModule':
                 batch_in = batch_in[:, [2, 0, 1]]
                 batch_rc = batch_rc[:, [2, 0, 1]]

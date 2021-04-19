@@ -2,13 +2,17 @@
 experiment-parameters:
 
   # name (required, str): The name of the experiment. Typically best to align with the model being used.
-  name: 'AAESimple'
+  model: 'SimpleAAE'
 
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
 
   # datamodule (required, str): The datamodule (or datagenerator) to use for your experiment.
   datamodule: 'LunarAnalogueDataModule'
+
+  # patience (optional, int, default=5) Determines when to conduct early stopping based on lowest validation loss.
+  # Set to null for default.
+  patience: null
 
 # data-parameters: Contains information used for preparing and loading the data.
 data-parameters:

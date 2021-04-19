@@ -10,6 +10,10 @@ experiment-parameters:
   # datamodule (required, str): The datamodule (or datagenerator) to use for your experiment.
   datamodule: 'LunarAnalogueDataModule'
 
+  # patience (optional, int, default=5) Determines when to conduct early stopping based on lowest validation loss.
+  # Set to null for default.
+  patience: null
+
 # data-parameters: Contains information used for preparing and loading the data.
 data-parameters:
 
