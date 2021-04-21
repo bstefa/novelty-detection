@@ -9,10 +9,10 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 
 
 class NovelRegionExtractorPipeline:
-    '''
+    """
     Conceptually this class would be called after another preprocessing
     pipeline is applied first, such as LunarAnaloguePreprocessingPipeline
-    '''
+    """
     def __init__(self, n_regions: int = 16, region_shape: tuple = (64, 64, 3)):
         super().__init__()
 
@@ -47,6 +47,7 @@ class NovelRegionExtractorPipeline:
             warped_crops[i] = warped_crop
 
         return warped_crops
+
 
 class LunarAnaloguePreprocessingPipeline:
     """
@@ -91,8 +92,8 @@ class LunarAnaloguePreprocessingPipeline:
 class CuriosityPreprocessingPipeline:
     """
     Standard image preprocessing pipeline for Curiosity data.
-    Cascades processing steps:
-        1) Channelwise standardization
+    1) Convert data to numpy.float32
+    2) Channelwise standardization
     """
 
     def __init__(self):
@@ -114,9 +115,9 @@ class CuriosityPreprocessingPipeline:
 
 class NoveltyMNISTPreprocessingPipeline:
     """
-    Standard image preprocessing pipeline for Curiosity data.
-    Cascades processing steps:
-        1) Channelwise standardization
+    Standard image preprocessing pipeline for Novelty MNIST data.
+    1) Convert data to torch.float32
+    2) Standardization
     """
 
     def __init__(self):

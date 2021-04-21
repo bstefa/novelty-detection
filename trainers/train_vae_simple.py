@@ -18,6 +18,8 @@ def main():
     exp_params = config['experiment-parameters']
     data_params = config['data-parameters']
     module_params = config['module-parameters']
+    assert ('VAE' in exp_params['model']), \
+        'Only accepts VAE-type models for training, check your configuration file.'
 
     # Initialize datamodule
     print('[INFO] Initializing datamodule..')

@@ -19,12 +19,13 @@ def main():
     exp_params = config['experiment-parameters']
     data_params = config['data-parameters']
     module_params = config['module-parameters']
+    assert ('AAE' in exp_params['model']), \
+        'Only accepts AAE-type models for training, check your configuration file.'
 
     # Initialize datamodule
     datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
     datamodule.prepare_data()
     datamodule.setup('train')
-    logging.debug(datamodule.data_shape)
 
     # Initialize model with number of nodes equal to number of input pixels
     model = supported_models[exp_params['model']](
