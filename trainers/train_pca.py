@@ -19,7 +19,6 @@ from modules.pca_base_module import PCABaseModule
 
 
 def main():
-
     config = tools.load_config(DEFAULT_CONFIG_FILE)
     # Unpack configuration
     exp_params = config['experiment-parameters']
@@ -43,11 +42,6 @@ def main():
     tools.save_object_to_version(config, version=version_nb, filename='configuration.yaml', **exp_params)
     with open(log_path / version_str / 'fitted_model.p', 'wb') as f:
         pickle.dump(module.model, f)
-
-
-
-
-
 
 
 if __name__ == '__main__':

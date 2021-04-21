@@ -2,8 +2,7 @@ from .aae_simple import SimpleAAE
 from .vae_simple import SimpleVAE
 from .cae_baseline import BaselineCAE
 from .cae_compression import CompressionCAEMidCapacity, CompressionCAEHighCapacity
-from .pca_standard import StandardPCA
-from .pca_incremental import IncrementalPCA
+from .pca import IncrementalPCA, StandardPCA
 
 supported_models = {
     'SimpleAAE': SimpleAAE,
