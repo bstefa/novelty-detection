@@ -1,0 +1,27 @@
+# experiment-parameters: Contains experiment-level information.
+experiment-parameters:
+
+  # name (required, str): The name of the experiment. Typically best to align with the model being used.
+  model: 'StandardPCA'
+
+  # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
+  log_dir: 'logs'
+
+  # datamodule (required, str): The datamodule (or datagenerator) to use for your experiment.
+  datamodule: 'NoveltyMNISTDataModule'
+
+
+# data-parameters: Contains information used for preparing and loading the data.
+data-parameters:
+
+  # root_data_path (required, str): Path to the common directory node immediately before training and testing branches.
+  # ensure that this path matches the datamodule specified in the experiment-parameters.
+  root_data_path: '/home/brahste/Datasets/NoveltyMNIST'
+
+
+# module-parameters: Contains hyperparameters used when training the model.
+module-parameters:
+
+  # n_components (optional, int, default=None): Number of components for PCA to use when fitting, if None (null) is
+  # used then the number of components will equal the number of training samples. Set to null for default.
+  n_components: null

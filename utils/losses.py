@@ -35,7 +35,7 @@ def squared_error(x, x_hat, show_plot: bool=False, return_map: bool=True):
     else:
          raise TypeError('Only numpy available array\'s supported')
 
- def mse_loss(x, x_hat):
+def mse_loss(x, x_hat):
     """
     Returns the MSE between an image and its reconstruction
 
