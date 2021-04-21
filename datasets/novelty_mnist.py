@@ -1,13 +1,18 @@
 import os
 import torch
+import numpy as np
 
-from typing import Optional
 from utils import preprocessing
+from utils.dtypes import *
 
 from datasets.base import BaseDataModule
 
 
 class NoveltyMNISTDataset(torch.utils.data.Dataset):
+    """
+    Fundemental class for importing Novelty MNIST data. This class should *never* be instantiated directly. Any
+    calls to the class should be handled implicitly through the associated DataModule.
+    """
     def __init__(
             self,
             root_data_path: str,
@@ -44,6 +49,14 @@ class NoveltyMNISTDataset(torch.utils.data.Dataset):
         else:
             raise ValueError('No matching class label was found')
 
+    def get_split(self) -> Tuple[np.ndarray, np.ndarray]:
+        novelty_labels = np.empty(len(self._class_labels))
+        for i in range(len(novelty_labels)):
+            novelty_labels[i] = self.get_label(i)
+        images = self._images.numpy()
+
+        return images, novelty_labels
+
 
 class NoveltyMNISTDataModule(BaseDataModule):
     def __init__(
@@ -63,17 +76,17 @@ class NoveltyMNISTDataModule(BaseDataModule):
         pass
 
     def setup(self, stage: Optional[str] = None):
-
+        # Since setup is called from every process, setting state here is okay
         if stage == 'fit' or stage == 'train' or stage is None:
-            trainval_set = NoveltyMNISTDataset(
+            self._trainval_set = NoveltyMNISTDataset(
                 self._root_data_path,
                 train=True,
                 data_transforms=self._data_transforms)
 
-            train_size = int(len(trainval_set) * self._train_fraction)
-            val_size = len(trainval_set) - train_size
-            # Since setup is called from every process, setting state here is okay
-            self._train_set, self._val_set = torch.utils.data.random_split(trainval_set, [train_size, val_size])
+            train_size = int(len(self._trainval_set) * self._train_fraction)
+            val_size = len(self._trainval_set) - train_size
+            self._train_set, self._val_set = torch.utils.data.random_split(
+                self._trainval_set, [train_size, val_size])
 
         elif stage == 'test':
             self._test_set = NoveltyMNISTDataset(
@@ -104,3 +117,7 @@ class NoveltyMNISTDataModule(BaseDataModule):
             batch_size=self._batch_size,
             drop_last=True,
             num_workers=8)
+
+    def split(self, train: bool) -> Tuple[np.ndarray, np.ndarray]:
+        ds = NoveltyMNISTDataset(self._root_data_path, train=train)
+        return ds.get_split()
