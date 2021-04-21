@@ -64,11 +64,11 @@ class CompressionCAEMidCapacity(nn.Module):
         # Decoding layers
         self.decoder = nn.Sequential(
             DecodingBlock(1, 8, kernel_size=3, padding=1),
-            DecodingBlock(8, 24, stride=2),
+            DecodingBlock(8, 24, stride=2, output_padding=1),   # CUR output=1
             DecodingBlock(24, 24, kernel_size=5, padding=2),
-            DecodingBlock(24, 48, stride=2, output_padding=1),
+            DecodingBlock(24, 48, stride=2, output_padding=1),  # MNIST, CUR outpad=1
             DecodingBlock(48, 48, kernel_size=5, padding=2),
-            DecodingBlock(48, 24, stride=2, output_padding=1),
+            DecodingBlock(48, 24, stride=2, output_padding=1),  # MNIST, CUR outpad=1
             DecodingBlock(24, 24, kernel_size=5, padding=2),
             nn.Conv2d(24, in_chans, kernel_size=3, padding=1),
             nn.Tanh()

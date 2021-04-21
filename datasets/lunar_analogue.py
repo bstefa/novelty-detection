@@ -37,7 +37,7 @@ class LunarAnalogueDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx: int):
 
-        image = io.imread(self._list_of_image_paths[idx])
+        image = io.imread(str(self._list_of_image_paths[idx]))
 
         if self._data_transforms:
             image = self._data_transforms(image)
@@ -72,12 +72,14 @@ class LunarAnalogueDataModule(BaseDataModule):
         self._val_fraction = 1 - self._train_fraction
         self._root_data_path = root_data_path
 
+        # TODO: Enable optional flag to start novel region extractor pipeline
+        # TODO: Find a way to incorporate labels into novel region extractor pipeline
         self._data_transforms = transforms.Compose([
             preprocessing.LunarAnaloguePreprocessingPipeline(),
-            tools.unstandardize_batch,
-            preprocessing.NovelRegionExtractorPipeline(),
-            transforms.Lambda(lambda regions: torch.stack([transforms.ToTensor()(region) for region in regions])),
-            transforms.Lambda(lambda x: x.to(dtype=torch.float32))
+            # tools.unstandardize_batch,
+            # preprocessing.NovelRegionExtractorPipeline(),
+            # transforms.Lambda(lambda regions: torch.stack([transforms.ToTensor()(region) for region in regions])),
+            # transforms.Lambda(lambda x: x.to(dtype=torch.float32))
         ])
 
         # Handle the default and optionally passed additional kwargs

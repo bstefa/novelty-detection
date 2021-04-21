@@ -104,7 +104,6 @@ class AAEBaseModule(pl.LightningModule):
             }
         }
 
-
     @property
     def version(self):
         return self.logger.version

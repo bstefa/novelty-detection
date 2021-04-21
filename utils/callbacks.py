@@ -159,13 +159,17 @@ class AAEVisualization(pl.callbacks.base.Callback):
             batch_in = batch_in.view(image_shape[0], -1)
             batch_lt = pl_module.encoder(batch_in.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
             batch_rc = pl_module.decoder(batch_lt)
+
+            batch_in = batch_in.reshape(image_shape)
+            batch_rc = batch_rc.reshape(image_shape)
+
             if trainer.datamodule.name == 'CuriosityDataModule':
                 batch_in = batch_in[:, [2, 0, 1]]
                 batch_rc = batch_rc[:, [2, 0, 1]]
 
             images = {
-                'batch_in': batch_in.reshape(image_shape),
-                'batch_rc': batch_rc.reshape(image_shape)
+                'batch_in': batch_in,
+                'batch_rc': batch_rc
             }
             _handle_image_logging(images, pl_module)
 

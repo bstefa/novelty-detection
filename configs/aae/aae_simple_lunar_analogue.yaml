@@ -49,4 +49,4 @@ module-parameters:
   weight_decay_coefficient: 0.001
 
   # latent_dims (required, int): Number of dimensions to use in the latent space of the VAE
-  latent_dims: 10
+  latent_nodes: 10

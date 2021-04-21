@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 import torch
 from utils import tools
 
-def squared_error(x, x_hat, show_plot: bool=False, return_map: bool=True):
+
+def squared_error(x, x_hat, show_plot: bool = False, return_map: bool = True):
     if isinstance(x, np.ndarray):
         x_err = (x - x_hat)**2
         if show_plot:
@@ -33,7 +34,8 @@ def squared_error(x, x_hat, show_plot: bool=False, return_map: bool=True):
         else:
             return np.mean(x_err)
     else:
-         raise TypeError('Only numpy available array\'s supported')
+        raise TypeError('Only numpy available array\'s supported')
+
 
 def mse_loss(x, x_hat):
     """
@@ -48,9 +50,10 @@ def mse_loss(x, x_hat):
     """
     mse_loss = torch.nn.MSELoss(reduction='none')
     recons_error = mse_loss(x, x_hat)
-    mse_loss_sum = torch.sum(recons_error, dim=(1,2,3))
+    mse_loss_sum = torch.sum(recons_error, dim=(1, 2, 3))
 
     return mse_loss_sum
+
 
 def recons_probability(x_hat):
     """
@@ -65,8 +68,9 @@ def recons_probability(x_hat):
     """
 
     probs = -torch.log(x_hat)
-    sum_probs = torch.sum(probs, dim(1, 2, 3))
+    sum_probs = torch.sum(probs, dim=(1, 2, 3))
     return sum_probs
+
 
 def kl_divergence(mu, logvar):
     """
@@ -83,6 +87,7 @@ def kl_divergence(mu, logvar):
     kld_loss = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim=1), dim=0)
 
     return kld_loss
+
 
 def mixed_loss(x_hat, mu, logvar):
     """
