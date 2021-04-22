@@ -14,65 +14,20 @@ from datasets import supported_datamodules
 from models import supported_models
 
 
-class TestCAETraining(unittest.TestCase):
+class TestAAETraining(unittest.TestCase):
 
     def test_aae_config_compatability(self):
 
-        def test_training_pipeline(config):
-            # Change log_dir for testing
-            config['experiment-parameters']['log_dir'] = os.path.join('tests', 'test_logs')
-
-            datamodule = supported_datamodules[config['experiment-parameters']['datamodule']](
-                **config['data-parameters'])
-            datamodule.prepare_data()
-            datamodule.setup('train')
-
-            model = supported_models[config['experiment-parameters']['model']](
-                in_nodes=reduce(lambda x, y: x*y, datamodule.data_shape),
-                latent_nodes=config['module-parameters']['latent_nodes'])
-
-            # Initialize experimental module
-            module = AAEBaseModule(model, batch_size=datamodule.batch_size, **config['module-parameters'])
-
-            # Initialize loggers to monitor training and validation
-            logger = pl.loggers.TensorBoardLogger(
-                config['experiment-parameters']['log_dir'],  # Temp location for dummy logs
-                name=os.path.join(config['experiment-parameters']['datamodule'], config['experiment-parameters']['model']))
-
-            # Initialize the Trainer object
-            trainer = pl.Trainer(
-                gpus=1,
-                logger=logger,
-                max_epochs=1,
-                weights_summary=None,
-                callbacks=[
-                    pl.callbacks.early_stopping.EarlyStopping(
-                        monitor='val_r_loss',
-                        patience=5 if config['experiment-parameters']['patience'] is None else config['experiment-parameters']['patience']),
-                    pl.callbacks.GPUStatsMonitor(),
-                    pl.callbacks.ModelCheckpoint(
-                        monitor='val_r_loss',
-                        filename='{val_r_loss:.2f}-{epoch}',
-                        save_last=True),
-                    callbacks.AAEVisualization()
-                ])
-
-            # Train the model
-            trainer.fit(module, datamodule)
-
-            # Remove try-except block for testing
-            tools.save_object_to_version(
-                config, version=module.version, filename='configuration.yaml', **config['experiment-parameters'])
-            tools.save_object_to_version(
-                str(model), version=module.version, filename='model_summary.txt', **config['experiment-parameters'])
-
-            return module
-
-        config_paths = glob.glob('configs/aae/*mnist*')
+        # TODO: Replace with glob once all models and configurations are operational (see test_cae_training.py)
+        config_paths = [
+            'configs/aae/aae_simple_mnist.yaml',
+            'configs/aae/aae_simple_curiosity.yaml'
+        ]
         for pth in config_paths:
             logging.info(f"Testing training for: {pth}")
             config = tools.load_config(pth)
-            module = test_training_pipeline(config)
+
+            module = _test_training_pipeline(config)
 
             log_path = Path('tests') / \
                 'test_logs' / \
@@ -84,6 +39,58 @@ class TestCAETraining(unittest.TestCase):
             self.assertTrue( (log_path / 'checkpoints').is_dir() )
             self.assertTrue( (log_path / 'configuration.yaml').is_file() )
             self.assertTrue( (log_path / 'model_summary.txt').is_file() )
+
+
+def _test_training_pipeline(config):
+    """This pipeline shadows the pipeline in trainers/train_aae.py with modifications for testing"""
+    # Change log_dir for testing
+    config['experiment-parameters']['log_dir'] = os.path.join('tests', 'test_logs')
+
+    datamodule = supported_datamodules[config['experiment-parameters']['datamodule']](
+        **config['data-parameters'])
+    datamodule.prepare_data()
+    datamodule.setup('train')
+
+    model = supported_models[config['experiment-parameters']['model']](
+        in_nodes=reduce(lambda x, y: x*y, datamodule.data_shape),
+        latent_nodes=config['module-parameters']['latent_nodes'])
+
+    # Initialize experimental module
+    module = AAEBaseModule(model, batch_size=datamodule.batch_size, **config['module-parameters'])
+
+    # Initialize loggers to monitor training and validation
+    logger = pl.loggers.TensorBoardLogger(
+        config['experiment-parameters']['log_dir'],  # Temp location for dummy logs
+        name=os.path.join(config['experiment-parameters']['datamodule'], config['experiment-parameters']['model']))
+
+    # Initialize the Trainer object
+    trainer = pl.Trainer(
+        gpus=1,
+        logger=logger,
+        max_epochs=1,
+        weights_summary=None,
+        callbacks=[
+            pl.callbacks.early_stopping.EarlyStopping(
+                monitor='val_r_loss',
+                patience=5 if config['experiment-parameters']['patience'] is None else config['experiment-parameters']['patience']),
+            pl.callbacks.GPUStatsMonitor(),
+            pl.callbacks.ModelCheckpoint(
+                monitor='val_r_loss',
+                filename='{val_r_loss:.2f}-{epoch}',
+                save_last=True),
+            callbacks.AAEVisualization()
+        ])
+
+    # Train the model
+    trainer.fit(module, datamodule)
+
+    # Remove try-except block for testing
+    tools.save_object_to_version(
+        config, version=module.version, filename='configuration.yaml', **config['experiment-parameters'])
+    tools.save_object_to_version(
+        str(model), version=module.version, filename='model_summary.txt', **config['experiment-parameters'])
+
+    return module
 
 
 if __name__ == '__main__':

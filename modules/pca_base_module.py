@@ -17,14 +17,15 @@ class PCABaseModule(object):
         Uses the class's training and validation generator to iteratively fit/validate the PCA model.
         """
         if 'module' in datamodule.name.lower():
-            X, y = datamodule.split(train=True)
-            self.model.fit(self._reshape_batch(X))
+            x, y = datamodule.split(train=True)
+            self.model.fit(self._reshape_batch(x))
 
         elif 'generator' in datamodule.name.lower():
+            assert hasattr(datamodule, 'trainval_generator')
             novelty_scores = []
 
             # Grab a batch from the training set
-            for batch_nb, batch_tr_in in enumerate(self.dg.trainval_generator('train')):
+            for batch_nb, batch_tr_in in enumerate(datamodule.trainval_generator('train')):
                 print(f'[BATCH {batch_nb}] Fitting...')
                 self.model.partial_fit(self._reshape_batch(batch_tr_in))
 

@@ -36,9 +36,7 @@ class LunarAnalogueDataset(torch.utils.data.Dataset):
         return len(self._list_of_image_paths)
 
     def __getitem__(self, idx: int):
-
         image = io.imread(str(self._list_of_image_paths[idx]))
-
         if self._data_transforms:
             image = self._data_transforms(image)
 
@@ -63,6 +61,7 @@ class LunarAnalogueDataModule(BaseDataModule):
             root_data_path: str,
             batch_size: int = 8,
             train_fraction: float = 0.8,
+
             **kwargs
     ):
         super(LunarAnalogueDataModule, self).__init__()
