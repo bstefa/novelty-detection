@@ -22,6 +22,7 @@ import numpy as np
 from datasets.base import BaseDataModule
 from torchvision import transforms
 from utils import tools, preprocessing
+from utils.dtypes import *
 
 
 class CuriosityDataset(torch.utils.data.Dataset):
@@ -44,22 +45,29 @@ class CuriosityDataset(torch.utils.data.Dataset):
         return len(self._list_of_image_paths)
 
     def __getitem__(self, idx: int):
-
         image = np.load(self._list_of_image_paths[idx]).astype(np.float32)
-
         if self._data_transforms:
             image = self._data_transforms(image)
 
         return image, self.get_label(idx)
 
     def get_label(self, idx: int):
-
         if 'typical' in str(self._list_of_image_paths[idx]):
             return 0
         elif 'novel' in str(self._list_of_image_paths[idx]):
             return 1
         else:
             raise ValueError('Cannot find typical/ or novel/ in file path')
+
+    def get_split(self) -> Tuple[np.ndarray, np.ndarray]:
+        dummy_image, _ = self[0]
+        all_images = np.empty((len(self), *dummy_image.shape))
+        all_labels = np.empty((len(self), ))
+        for i in range(len(self)):
+            image, label = self[i]
+            all_images[i] = image.numpy()
+            all_labels[i] = label
+        return all_images, all_labels
 
 
 class CuriosityDataModule(BaseDataModule):
@@ -126,6 +134,6 @@ class CuriosityDataModule(BaseDataModule):
             drop_last=True,
             num_workers=8)
 
-
-if __name__ == '__main__':
-    pass
+    def split(self, train: bool) -> Tuple[np.ndarray, np.ndarray]:
+        ds = CuriosityDataset(self._root_data_path, train=train, data_transforms=self._data_transforms)
+        return ds.get_split()

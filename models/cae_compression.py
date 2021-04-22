@@ -1,9 +1,9 @@
-import torch
 import torch.nn as nn
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
+from utils.dtypes import *
 
 class EncodingBlock(nn.Module):
     def __init__(
@@ -46,9 +46,16 @@ class DecodingBlock(nn.Module):
 
 
 class CompressionCAEMidCapacity(nn.Module):
-    def __init__(self, in_chans: int):
+    def __init__(self, in_shape: Size):
         super().__init__()
-        assert isinstance(in_chans, int), f'in_chans must be of type int, got {type(in_chans)}'
+        in_chans = in_shape[0]
+        height, width = in_shape[1], in_shape[2]
+        assert isinstance(in_chans, int) and isinstance(height, int), \
+            f'in_chans must be of type int, got {type(in_chans)}, and {type(height)}'
+        assert any((in_chans == nb for nb in [1, 3, 6])), \
+            f'Input image must be greyscale (1), RGB/YUV (3), or 6-channel multispectral, got {in_chans} channels'
+        assert any((height == nb for nb in [28, 64, 256])), \
+            f'Input image must have height == 28, 64, or 256, got {height}'
 
         # Encoding layers
         self.encoder = nn.Sequential(
@@ -64,11 +71,11 @@ class CompressionCAEMidCapacity(nn.Module):
         # Decoding layers
         self.decoder = nn.Sequential(
             DecodingBlock(1, 8, kernel_size=3, padding=1),
-            DecodingBlock(8, 24, stride=2, output_padding=1),   # CUR output=1
+            DecodingBlock(8, 24, stride=2, output_padding=1 if height == 64 else 0),   # CURIOSITY output=1
             DecodingBlock(24, 24, kernel_size=5, padding=2),
-            DecodingBlock(24, 48, stride=2, output_padding=1),  # MNIST, CUR outpad=1
+            DecodingBlock(24, 48, stride=2, output_padding=1),  # MNIST, CURIOSITY outpad=1
             DecodingBlock(48, 48, kernel_size=5, padding=2),
-            DecodingBlock(48, 24, stride=2, output_padding=1),  # MNIST, CUR outpad=1
+            DecodingBlock(48, 24, stride=2, output_padding=1),  # MNIST, CURIOSITY outpad=1
             DecodingBlock(24, 24, kernel_size=5, padding=2),
             nn.Conv2d(24, in_chans, kernel_size=3, padding=1),
             nn.Tanh()
@@ -84,9 +91,16 @@ class CompressionCAEMidCapacity(nn.Module):
 
 
 class CompressionCAEHighCapacity(nn.Module):
-    def __init__(self, in_chans: int):
+    def __init__(self, in_shape: Size):
         super().__init__()
-        assert isinstance(in_chans, int), f'in_chans must be of type int, got {type(in_chans)}'
+        in_chans = in_shape[0]
+        height, width = in_shape[1], in_shape[2]
+        assert isinstance(in_chans, int) and isinstance(height, int), \
+            f'in_chans must be of type int, got {type(in_chans)}, and {type(height)}'
+        assert any((in_chans == nb for nb in [1, 3, 6])), \
+            f'Input image must be greyscale (1), RGB/YUV (3), or 6-channel multispectral, got {in_chans} channels'
+        assert any((height == nb for nb in [28, 64, 256])), \
+            f'Input image must have height == 28, 64, or 256, got {height}'
 
         # Encoding layers
         self.encoder = nn.Sequential(
@@ -102,11 +116,11 @@ class CompressionCAEHighCapacity(nn.Module):
         # Decoding Layers
         self.decoder = nn.Sequential(
             DecodingBlock(1, 64, kernel_size=3, padding=1),
-            DecodingBlock(64, 128, stride=2),
+            DecodingBlock(64, 128, stride=2, output_padding=1 if height == 64 else 0),  # Curiosity outpad=1
             DecodingBlock(128, 256, kernel_size=5, padding=2),
-            DecodingBlock(256, 256, stride=2, output_padding=1),
+            DecodingBlock(256, 256, stride=2, output_padding=1),  # MNIST, CURIOSITY outpad=1
             DecodingBlock(256, 256, kernel_size=5, padding=2),
-            DecodingBlock(256, 128, stride=2, output_padding=1),
+            DecodingBlock(256, 128, stride=2, output_padding=1),  # MNIST, CURIOSITY outpad=1
             DecodingBlock(128, 64, kernel_size=5, padding=2),
             nn.Conv2d(64, in_chans, kernel_size=3, padding=1),
             nn.Tanh()

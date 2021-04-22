@@ -3,6 +3,7 @@ import torch.nn as nn
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+from utils.dtypes import *
 
 
 class EncodingBlock(nn.Module):
@@ -46,9 +47,16 @@ class DecodingBlock(nn.Module):
 
 
 class BaselineCAE(nn.Module):
-    def __init__(self, in_chans: int):
+    def __init__(self, in_shape: Size):
         super().__init__()
-        assert isinstance(in_chans, int), f'in_chans must be of type int, got {type(in_chans)}'
+        in_chans = in_shape[0]
+        height, width = in_shape[1], in_shape[2]
+        assert isinstance(in_chans, int) and isinstance(height, int), \
+            f'in_chans must be of type int, got {type(in_chans)}, and {type(height)}'
+        assert any((in_chans == nb for nb in [1, 3, 6])), \
+            f'Input image must be greyscale (1), RGB/YUV (3), or 6-channel multispectral, got {in_chans} channels'
+        assert any((height == nb for nb in [28, 64, 256])), \
+            f'Input image must have height == 28, 64, or 256, got {height}'
 
         # Encoding layers
         self.encoder = nn.Sequential(

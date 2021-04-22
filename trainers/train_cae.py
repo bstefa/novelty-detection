@@ -36,11 +36,11 @@ def main():
     logging.debug(datamodule.data_shape)
 
     # Note that Pytorch uses the convention of shaping data as [..., C, H, W] as opposed
-    # to [..., H, W, C]. When using a region extractor, the shaoe of the returned data may
+    # to [..., H, W, C]. When using a region extractor, the shape of the returned data may
     # be [n_regions, C, H, W]. The BaseDataModule class always returns the last three channels
     # when calling '.data_shape', the actual batch shape discrepancy is is handled implicitly
     # in the DataIntegrityCallback
-    model = supported_models[exp_params['model']](datamodule.data_shape[0])
+    model = supported_models[exp_params['model']](datamodule.data_shape)
 
     # Initialize experimental module
     module = CAEBaseModule(model, **module_params)
