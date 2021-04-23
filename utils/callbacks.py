@@ -183,11 +183,20 @@ class VAEVisualization(pl.callbacks.base.Callback):
             batch_in, _ = batch
             batch_in = batch_in.detach().to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 
-            index = torch.randint(len(batch_in), size=(1,))
-            self.sample_images(batch_in[index], pl_module)
+            batch_rc = pl_module.model.generate(batch_in)
+
+            samples = pl_module.model.sample(num_samples=144)
+
+            if trainer.datamodule.name == 'CuriosityDataModule':
+                batch_in = batch_in[:, [2, 0, 1]]
+                batch_rc = batch_rc[:, [2, 0, 1]]
+                samples = samples[:, [2, 0, 1]]
+
+            index = torch.randint(len(batch_in), size=(6,))
+            self.sample_images(batch_in[index], batch_rc[index], samples, pl_module)
 
     @staticmethod
-    def sample_images(batch_in, pl_module):
+    def sample_images(batch_in, batch_rc, samples, pl_module):
         logger_save_path = os.path.join(
             pl_module.logger.save_dir,
             pl_module.logger.name,
@@ -198,18 +207,16 @@ class VAEVisualization(pl.callbacks.base.Callback):
         if not os.path.exists(logger_save_path):
             os.mkdir(logger_save_path)
 
-        # Get sample reconstruction image
-        batch_rc = pl_module.model.generate(batch_in)
         grid = torch.cat((batch_in, batch_rc))
+
         vutils.save_image(
             grid,
             os.path.join(
                 logger_save_path,
                 f'epoch={pl_module.current_epoch}-step={pl_module.global_step}-recons.png'),
             normalize=True,
-            nrow=1)
+            nrow=6)
 
-        samples = pl_module.model.sample(num_samples=144)
         vutils.save_image(
             samples,
             os.path.join(
@@ -217,5 +224,3 @@ class VAEVisualization(pl.callbacks.base.Callback):
                 f'epoch={pl_module.current_epoch}-step={pl_module.global_step}-samples.png'),
             normalize=True,
             nrow=12)
-
-        del batch_rc
