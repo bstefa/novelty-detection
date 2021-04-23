@@ -2,7 +2,7 @@
 experiment-parameters:
 
   # name (required, str): The name of the experiment. Typically best to align with the model being used.
-  model: 'SimpleVAE'
+  model: 'BaselineVAE'
 
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
@@ -36,11 +36,11 @@ module-parameters:
 
   # learning_rate (optional, float, default='auto'): Scaling factor for gradient descent step.
   # Set to null for default.
-  learning_rate: 0.0001
+  learning_rate: null
 
   # weight_decay_coefficient (optional, float, default=0.01): Scaling factor for loss regularization term.
   # Set to null for default.
   weight_decay_coefficient: 0.01
 
   # latent_dims (required, int): Number of dimensions to use in the latent space of the VAE
-  latent_nodes: 10
+  latent_nodes: 32
