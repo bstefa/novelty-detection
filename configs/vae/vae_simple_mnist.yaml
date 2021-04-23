@@ -39,5 +39,5 @@ module-parameters:
   learning_rate: 0.01
 
   # latent_dims (required, int): Number of dimensions to use in the latent space of the VAE
-  latent_dims: 10
+  latent_nodes: 10
 

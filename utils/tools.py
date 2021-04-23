@@ -145,5 +145,37 @@ def next_version(path: str):
     return f'version_{v}', v
 
 
+def output_shape_conv2d(s: int, padding: int, kernel_size: int,
+                        stride: int, dilation: int = 1, iterations: int = 1):
+    for i in range(iterations):
+        out = int(((s + 2 * padding - dilation * (kernel_size - 1) - 1) / stride) + 1)
+        s = out
+    return s
+
+
+def output_shape_conv2d2(h: int, padding: list, kernel_size: list, stride: list):
+    dilation = 1
+    for p, k, s in zip(padding, kernel_size, stride):
+        out = int(((h + 2 * p - dilation * (k - 1) - 1) / s) + 1)
+        h = out
+    return h
+
+
+def output_shape_convtranspose2d(s: int, padding: int, kernel_size: int,
+                                 stride: int, output_padding: int, dilation: int = 1, iterations: int = 1):
+    for i in range(iterations):
+        out = int((s - 1) * stride - 2 * padding + dilation * (kernel_size - 1) + output_padding + 1)
+        s = out
+    return s
+
+
 if __name__ == '__main__':
     p = PathGlobber('datasets/filename_list.json')
+
+    h = 64
+    h_out = output_shape_conv2d2(
+            h,
+            padding=[2]*7,
+            kernel_size=[5, 5, 5, 5, 5, 5, 5],
+            stride=[1, 1, 2, 1, 1, 2, 1])
+    print(h_out)

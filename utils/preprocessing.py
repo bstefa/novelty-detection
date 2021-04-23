@@ -100,7 +100,8 @@ class CuriosityPreprocessingPipeline:
         return
 
     def __call__(self, image: np.ndarray) -> np.ndarray:
-        assert image.shape == (64, 64, 6), 'Dataset not in correct format for pre-processing'
+        assert image.shape == (64, 64, 6), \
+            'Dataset not in correct format for pre-processing'
         n_channels = image.shape[-1]
 
         # Convert image dtype to float
