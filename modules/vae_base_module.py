@@ -53,18 +53,19 @@ class VAEBaseModule(pl.LightningModule):
         self.log_dict(result, on_epoch=True, prog_bar=True)
         return result
 
-    def test_step(self, batch, batch_nb):
+    def test_step(self, batch, batch_nb, criterion):
         batch_in, batch_labels = batch
-        recons = self.model.generate(batch_in)
+        recons, mu, log_var = self.model.forward(batch_in)
 
-        mse_loss = torch.nn.MSELoss(reduction='none')
-        recons_error = mse_loss(recons, batch_in)
-        mse_loss_sum = torch.sum(recons_error, dim=(1, 2, 3))
+        assert(callable(criterion)), "The novelty criterion must be callable."
+
+        scores = criterion(images=batch_in, recons=recons, mu=mu, log_var=log_var)
 
         results = {
-            'scores': mse_loss_sum,
+            'scores': scores,
             'labels': batch_labels
         }
+
         return results
 
     @property

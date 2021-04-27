@@ -187,6 +187,11 @@ class VAEVisualization(pl.callbacks.base.Callback):
 
             samples = pl_module.model.sample(num_samples=144)
 
+            print(torch.max(batch_in))
+            print(torch.min(batch_in))
+            print(torch.max(batch_rc))
+            print(torch.min(batch_rc))
+
             if trainer.datamodule.name == 'CuriosityDataModule':
                 batch_in = batch_in[:, [2, 0, 1]]
                 batch_rc = batch_rc[:, [2, 0, 1]]

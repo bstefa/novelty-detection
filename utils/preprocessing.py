@@ -3,6 +3,7 @@ import torch
 import numpy as np
 
 from sklearn.cluster import KMeans
+from torchvision import transforms
 
 import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -131,7 +132,9 @@ class NoveltyMNISTPreprocessingPipeline:
         image = image.to(dtype=torch.float32)
 
         # Standardize image
-        image = (image - image.mean()) / image.std()
+        # image = (image - image.mean()) / image.std()
+        image -= image.min()
+        image /= image.max()
 
         return image
 

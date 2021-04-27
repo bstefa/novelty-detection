@@ -20,7 +20,7 @@ data-parameters:
 
   # root_data_path (required, str): Path to the common directory node immediately before training and testing branches.
   ###root_data_path: '/home/fenrir/Documents/Datasets/NoveltyMNIST'
-  root_data_path: '/home/brahste/Datasets/NoveltyMNIST'
+  root_data_path: '/home/fenrir/Documents/Datasets/NoveltyMNIST'
 
   # train_fraction (optional, float, default=0.8): Fraction of training samples to be used for
   # training, the rest will be used for validation. Set to null for default.

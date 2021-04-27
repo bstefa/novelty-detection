@@ -54,8 +54,8 @@ class ParentVAE(nn.Module):
         """
         assert (batch_in.shape == batch_rc.shape), \
             f'Input and reconstruction shapes don\'t match, got {batch_in.shape}, {batch_rc.shape}'
-        reconstruction_loss = F.mse_loss(batch_rc, batch_in)
 
+        reconstruction_loss = F.mse_loss(batch_rc, batch_in)
         kld_weight = kwargs['M_N']  # Account for the minibatch samples from the dataset
         kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
 
@@ -69,6 +69,7 @@ class ParentVAE(nn.Module):
         """
         z = torch.randn(num_samples, self._latent_nodes, device=torch.device('cuda'))
         samples = self.decode(z)
+        # samples = (samples + 1)/2
         return samples
 
     def generate(self, x: Tensor, **kwargs) -> Tensor:
@@ -76,6 +77,7 @@ class ParentVAE(nn.Module):
         Sample from q(z|x) and return reconstruction p(x|z)
         """
         x_hat, _, _ = self.forward(x)
+        # x_hat = (x_hat + 1)/2
         return x_hat
 
 
@@ -179,8 +181,10 @@ class SimpleVAE(ParentVAE):
             nn.ConvTranspose2d(16, 16, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.BatchNorm2d(16),
             nn.LeakyReLU(),
-            nn.Conv2d(16, in_chans, kernel_size=3, padding=1),
-            nn.Tanh())
+            nn.Conv2d(16, in_chans, kernel_size=3, padding=1))
+
+        # for the gaussian likelihood
+        self.logscale = nn.Parameter(torch.Tensor([0.0]))
 
     def decode(self, z: Tensor) -> Tensor:
         """
@@ -191,3 +195,29 @@ class SimpleVAE(ParentVAE):
         x_hat = self.decoder(x_hat)
         x_hat = self.final_layer(x_hat)
         return x_hat
+
+    def gaussian_likelihood(self, x_hat, x, logscale):
+        scale = torch.exp(logscale)
+        mean = x_hat
+        dist = torch.distributions.Normal(mean, scale)
+
+        # measure prob of seeing image under p(x|z)
+        log_pxz = dist.log_prob(x)
+        return log_pxz.mean()
+
+    def loss_function(self, batch_rc: Tensor, batch_in: Tensor, mu: Tensor, log_var: Tensor, **kwargs) -> tuple:
+        """
+        Compute Evidence Lower Bound (elbo) loss
+        elbo = reconstruction loss + Kullback-Leibler divergence
+        """
+        assert (batch_in.shape == batch_rc.shape), \
+            f'Input and reconstruction shapes don\'t match, got {batch_in.shape}, {batch_rc.shape}'
+
+        # reconstruction_loss = F.mse_loss(batch_rc, batch_in)
+        reconstruction_loss = self.gaussian_likelihood(batch_rc, batch_in, self.logscale)
+        kld_weight = kwargs['M_N']  # Account for the minibatch samples from the dataset
+        kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
+
+        elbo_loss = kld_weight * kld_loss - reconstruction_loss
+
+        return elbo_loss, reconstruction_loss, -kld_loss    
