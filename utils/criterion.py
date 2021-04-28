@@ -38,9 +38,13 @@ class ReconsProbability():
         print("Testing with Reconstruction Probability criterion")
 
     def __call__(self, **kwargs):
-        probs = torch.log(-kwargs['recons'])
-        sum_probs = torch.sum(probs, dim=(1, 2, 3))
-        return sum_probs
+
+        # probs = torch.log(-kwargs['recons'])
+        dist = torch.distributions.Normal(kwargs['recons'], 1.0)
+        log_pxz = dist.log_prob(kwargs['images'])
+        sum_probs = torch.sum(log_pxz, dim=(1, 2, 3))
+
+        return -sum_probs
 
 class KLD():
     """
@@ -51,16 +55,34 @@ class KLD():
     log_var: Tensor (B, 1) -> logvar of a Gaussian distribution q(z|x_test)
 
     OUTPUT:
-    kld_loss: Tensor(B, 1) -> Kullback-Leibler divergence
+    kld: Tensor(B, 1) -> Kullback-Leibler divergence
     """
     def __init__(self):
         print("Testing with KLD criterion")
 
     def __call__(self, **kwargs):
-        
-        kld_loss = -0.5 * torch.sum(1 + kwargs['log_var'] - kwargs['mu'] ** 2 - kwargs['log_var'].exp(), dim=1)
 
-        return kld_loss
+        # kld for each distribution
+        kld = 0.5 * torch.sum(1 + kwargs['log_var'] - kwargs['mu'] ** 2 - kwargs['log_var'].exp(), dim=1)
+
+        # std = torch.exp(kwargs['log_var'] / 2)
+
+        # p = torch.distributions.Normal(torch.zeros_like(kwargs['mu']), torch.ones_like(std))
+        # q = torch.distributions.Normal(kwargs['mu'], std)
+
+        # # 2. get the probabilities from the equation
+        # z = q.rsample()
+        # log_qzx = q.log_prob(z)
+        # log_pz = p.log_prob(z)
+
+        # # kld
+
+        # kld = (log_qzx - log_pz)
+        # kld = kld.sum(dim=(-1))
+
+        # print(kld)
+
+        return kld
 
 class MixedLoss():
     """
@@ -76,14 +98,13 @@ class MixedLoss():
     """
     def __init__(self):
         print("Testing with Mixed Loss criterion")
+        self.recons_probability = ReconsProbability()
+        self.kld = KLD()
 
     def __call__(self, **kwargs):
         
-        recons_probability = ReconsProbability()
-        kld = KLD()
-
-        recons_prob_loss = recons_probability(recons=kwargs['recons'])
-        kld_loss = kld(mu=kwargs['mu'], log_var=kwargs['log_var'])
+        recons_prob_loss = self.recons_probability(images=kwargs['images'], recons=kwargs['recons'])
+        kld_loss = self.kld(mu=kwargs['mu'], log_var=kwargs['log_var'])
 
         mixed_loss = recons_prob_loss + kld_loss
 

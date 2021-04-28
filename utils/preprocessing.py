@@ -132,9 +132,9 @@ class NoveltyMNISTPreprocessingPipeline:
         image = image.to(dtype=torch.float32)
 
         # Standardize image
-        # image = (image - image.mean()) / image.std()
-        image -= image.min()
-        image /= image.max()
+        image = (image - image.mean()) / image.std()
+        # image -= image.min()
+        # image /= image.max()
 
         return image
 
