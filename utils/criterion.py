@@ -86,7 +86,7 @@ class KLD():
 
 class MixedLoss():
     """
-    Implements the mixed loss M1 in the Sintini, Kuntze paper
+    Implements the mixed loss M1 frome the Sintini, Kuntze paper
 
     INPUT:
         recons: Tensor (B, C, H, W) -> reconstruction
@@ -109,3 +109,36 @@ class MixedLoss():
         mixed_loss = recons_prob_loss + kld_loss
 
         return mixed_loss
+
+class BestLoss():
+    """
+    Implements the best loss R9 from the Sintini, Kuntze paper.
+    This loss finds the least error between
+    the reconstruction of the test imiage and the 
+    reconstruction of an image from the training set.
+    
+    INPUTS:
+        reconstructions from the training set
+        reconstruction from the test image
+    OUTPUTS:
+        min_recons_loss: Tenso
+    """
+
+    def __init__(self, datamodule, model):
+        print("Testing wiht the Best Loss criterion")
+
+        self.model = model
+
+        self.datamodule = datamodule
+        self.datamodule.setup("train")
+
+        outputs = []
+
+        for image, data in datamodule.train_dataloader():
+            outputs.append(self.model.generate(image))
+
+        self.train_recons = torch.cat(outputs, dim=0)
+        
+    def __call__(self, **kwargs):
+        return 0
+        
