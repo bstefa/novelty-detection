@@ -29,9 +29,12 @@ def collate_nre(batch):
     for image, label_dict in batch:
         batch_image.append(image)
 
-        batch_filepaths.append(label_dict['filepath']*num_crops)
-        batch_gt_bboxes.append([label_dict['gt_bbox']]*num_crops)
         batch_cr_bboxes.append(label_dict['cr_bboxes'])
+
+        batch_filepaths.append(label_dict['filepath']*num_crops)
+        # Set so that cr_bboxes and gt_bboxes are the same style (x, y, w, h)
+        y, x, h, w = label_dict['gt_bbox']
+        batch_gt_bboxes.append([[x, y, w, h]]*num_crops)
 
     labels = {
         'filepaths': np.stack(batch_filepaths),
@@ -82,7 +85,7 @@ class LunarAnalogueDataset(torch.utils.data.Dataset):
         pth = self._list_of_image_paths[idx]
 
         if 'typical' in str(pth) or 'trainval' in str(pth):
-            gt_bbox = [-1]
+            gt_bbox = [0, 0, 0, 0]
         elif 'novel' in str(pth):
             with open(pth.parent.parent / 'bbox' / f'{pth.stem}.json', 'r') as f:
                 gt_bbox_list = json.load(f)
@@ -128,7 +131,7 @@ class LunarAnalogueDataModule(BaseDataModule):
             self._use_custom_collate_fn = False
 
         # Handle the default and optionally passed additional kwargs
-        self._glob_pattern_train = 'trainval/*.jpeg'
+        self._glob_pattern_train = 'trainval/**/*.jpeg'
         self._glob_pattern_test = 'test/**/*.jpeg'
         for key in kwargs:
             if key == 'glob_pattern_train' and kwargs[key] is not None:
@@ -173,7 +176,7 @@ class LunarAnalogueDataModule(BaseDataModule):
             self._train_set,
             batch_size=self._batch_size,
             drop_last=True,
-            num_workers=8,
+            num_workers=12,
             collate_fn=collate_nre if self._use_custom_collate_fn else default_collate
         )
 
@@ -182,7 +185,7 @@ class LunarAnalogueDataModule(BaseDataModule):
             self._val_set,
             batch_size=self._batch_size,
             drop_last=True,
-            num_workers=8,
+            num_workers=12,
             collate_fn=collate_nre if self._use_custom_collate_fn else default_collate
         )
 
@@ -191,7 +194,7 @@ class LunarAnalogueDataModule(BaseDataModule):
             self._test_set,
             batch_size=self._batch_size,
             drop_last=True,
-            num_workers=8,
+            num_workers=12,
             collate_fn=collate_nre if self._use_custom_collate_fn else default_collate
         )
 

@@ -63,7 +63,8 @@ class VAEBaseModule(pl.LightningModule):
 
         results = {
             'scores': mse_loss_sum,
-            'labels': batch_labels
+            'labels': batch_labels,
+            'recons': recons
         }
         return results
 

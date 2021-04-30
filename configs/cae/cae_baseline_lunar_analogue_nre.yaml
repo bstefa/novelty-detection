@@ -32,9 +32,11 @@ data-parameters:
 
   # batch_size (optional, int, default=8): Number of samples to be used in each iteration.
   # Set to null for default.
-  batch_size: 4
+  batch_size: 32
 
   use_custom_collate_fn: true
+
+  preprocessing: 'LunarAnalogueRegionExtractor'
 
 
 # module-parameters: Contains hyperparameters used when training the model.

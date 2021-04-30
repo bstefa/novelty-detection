@@ -6,8 +6,8 @@ import matplotlib.patches as patches
 
 from sklearn.cluster import KMeans
 
-import logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+# import logging
+# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class NovelRegionExtractorPipeline:
@@ -15,11 +15,17 @@ class NovelRegionExtractorPipeline:
     Conceptually this class would be called after another preprocessing
     pipeline is applied first, such as LunarAnaloguePreprocessingPipeline
     """
-    def __init__(self, n_regions: int = 32, region_shape: tuple = (64, 64, 3), view_region_proposals=False):
+    def __init__(
+            self,
+            n_regions: int = 16,
+            region_shape: tuple = (64, 64, 3),
+            return_tensor: bool = True,
+            view_region_proposals: bool = False):
         super().__init__()
 
         self.n_regions = n_regions
         self.region_shape = region_shape
+        self._return_tensor = return_tensor
         self._view_region_proposals = view_region_proposals
 
         self._ss = cv.ximgproc.segmentation.createSelectiveSearchSegmentation()
@@ -36,9 +42,21 @@ class NovelRegionExtractorPipeline:
         rects = self._ss.process()
 
         # Filter rectangles according to total area between defined quantiles
-        areas = [w * h for (_, _, w, h) in rects]
-        area_low, area_high = np.quantile(areas, [0.50, 1.0])
-        keep_rects = rects[(areas > area_low) & (areas < area_high)]
+        areas = np.empty(len(rects))
+        whaspects = np.empty(len(rects))
+        for i, (_, _, w, h) in enumerate(rects):
+            areas[i] = w * h
+            whaspects[i] = w / h
+
+        area_low, area_high = np.quantile(areas, [0.3, 1.])
+        whaspect_low, whaspect_high = np.quantile(whaspects, [0., 0.8])
+        hwaspect_low, hwaspect_high = np.quantile(1/whaspects, [0., 0.8])
+
+        keep_rects = rects[
+            (areas > area_low) & (areas < area_high) &
+            (whaspects > whaspect_low) & (whaspects < whaspect_high)
+            & ((1/whaspects) > hwaspect_low) & ((1/whaspects) < hwaspect_high)
+        ]
 
         self._kmeans.fit(keep_rects)
         warped_crops = np.empty((self.n_regions, *self.region_shape))
@@ -62,6 +80,8 @@ class NovelRegionExtractorPipeline:
                 ax.add_patch(rect)
             plt.show()
 
+        if self._return_tensor:
+            warped_crops = torch.tensor(warped_crops).permute(0, 3, 1, 2)
         return warped_crops, crop_bboxes
 
 

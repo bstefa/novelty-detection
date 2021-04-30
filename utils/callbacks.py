@@ -105,7 +105,8 @@ class DataIntegrityCallback(pl.callbacks.base.Callback):
     def _handle_batch(batch):
         """Conducts an inplace operation to merge regions and batch size if necessary"""
         batch_in, _ = batch
-        assert any(len(batch_in.shape) == s for s in (4, 5)), f'Batch must have 4 or 5 dims, got {len(batch_in.shape)}'
+        assert any(len(batch_in.shape) == s for s in (4, 5)), \
+            f'Batch must have 4 or 5 dims, got {len(batch_in.shape)}'
         if len(batch_in.shape) == 5:
             batch_in = batch_in.view(-1, *batch_in.shape[2:])
         batch = (batch_in, _)

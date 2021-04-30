@@ -13,7 +13,7 @@ import os
 import pytorch_lightning as pl
 import logging
 
-from utils import tools, callbacks
+from utils import tools, callbacks, supported_preprocessing_transforms
 from modules.cae_base_module import CAEBaseModule
 from datasets import supported_datamodules
 from models import supported_models
@@ -31,12 +31,12 @@ def main():
 
     # What I should do is set up the data transforms directly in the training script, this can
     # be outsourced to a configuration file later.
-    preprocessing_transforms = Compose([
-
-    ])
+    preprocessing_transforms = supported_preprocessing_transforms[data_params['preprocessing']]
 
     # Initialize datamodule (see datasets/__init__.py for details)
-    datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
+    datamodule = supported_datamodules[exp_params['datamodule']](
+        data_transforms=preprocessing_transforms,
+        **data_params)
     datamodule.prepare_data()
     datamodule.setup('train')
     logging.debug(datamodule.data_shape)

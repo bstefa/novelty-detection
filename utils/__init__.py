@@ -1,20 +1,31 @@
 from .preprocessing import *
-from .tools import unstandardize_batch
 
 from torchvision import transforms
 
-LunarAnalogueWholeImage = transforms.Compose([
-    LunarAnaloguePreprocessingPipeline()
+
+NoveltyMNISTPreproccesing = transforms.Compose([
+    NoveltyMNISTPreprocessingPipeline()
 ])
 
+CuriosityPreprocessing = transforms.Compose([
+    CuriosityPreprocessingPipeline(),
+    transforms.ToTensor()
+])
+
+LunarAnalogueWholeImage = transforms.Compose([
+    LunarAnaloguePreprocessingPipeline(),
+    transforms.ToTensor()
+])
+
+# Because of the fancy labelling and collation, needs to return images are tensors
 LunarAnalogueRegionExtractor = transforms.Compose([
     LunarAnaloguePreprocessingPipeline(normalize='zero_to_one'),
-    NovelRegionExtractorPipeline(view_region_proposals=True),
-    # transforms.Lambda(lambda regions: torch.stack([transforms.ToTensor()(region) for region in regions])),
-    # transforms.Lambda(lambda x: x.to(dtype=torch.float32))
+    NovelRegionExtractorPipeline(view_region_proposals=False),
 ])
 
 supported_preprocessing_transforms = {
+    'NoveltyMNISTPreprocessing': NoveltyMNISTPreproccesing,
+    'CuriosityPreprocessing': CuriosityPreprocessing,
     'LunarAnalogueWholeImage': LunarAnalogueWholeImage,
     'LunarAnalogueRegionExtractor': LunarAnalogueRegionExtractor
 }
