@@ -20,8 +20,6 @@ import torch
 import numpy as np
 
 from datasets.base import BaseDataModule
-from torchvision import transforms
-from utils import tools, preprocessing
 from utils.dtypes import *
 
 
@@ -76,6 +74,7 @@ class CuriosityDataModule(BaseDataModule):
             root_data_path: str,
             batch_size: int = 8,
             train_fraction: float = 0.85,
+            data_transforms=None,
             **kwargs):
         super().__init__()
 
@@ -85,9 +84,9 @@ class CuriosityDataModule(BaseDataModule):
         self._root_data_path = root_data_path
         self._val_fraction = 1 - self._train_fraction
 
-        self._data_transforms = transforms.Compose([
-            preprocessing.CuriosityPreprocessingPipeline(),
-            transforms.ToTensor()])
+        assert (data_transforms is not None), \
+            'Changes have been made. Data transforms must now be defined in the training script. See utils/__init__.py.'
+        self._data_transforms = data_transforms
 
     def prepare_data(self):
         pass

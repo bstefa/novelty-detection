@@ -17,7 +17,8 @@ LunarAnalogueWholeImage = transforms.Compose([
     transforms.ToTensor()
 ])
 
-# Because of the fancy labelling and collation, needs to return images are tensors
+# Because of the fancy labelling and collation ToTensor cannot be applied to this
+# transform. It needs to return images as correctly formatted tensors
 LunarAnalogueRegionExtractor = transforms.Compose([
     LunarAnaloguePreprocessingPipeline(normalize='zero_to_one'),
     NovelRegionExtractorPipeline(view_region_proposals=False),

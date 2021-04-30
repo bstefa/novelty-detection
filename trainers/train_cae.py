@@ -7,7 +7,7 @@ Uses:
     Module: CAEBaseModule
     Model: ReferenceCAE
     Dataset: LunarAnalogueDataGenerator
-    Configuration: cae_baseline_lunar_analogue.yaml
+    Configuration: cae_baseline_lunar_analogue_whole.yaml
 """
 import os
 import pytorch_lightning as pl
@@ -29,8 +29,7 @@ def main():
     assert ('CAE' in exp_params['model']), \
         'Only accepts CAE-type models for training, check your configuration file.'
 
-    # What I should do is set up the data transforms directly in the training script, this can
-    # be outsourced to a configuration file later.
+    # Set up preprocessing routine
     preprocessing_transforms = supported_preprocessing_transforms[data_params['preprocessing']]
 
     # Initialize datamodule (see datasets/__init__.py for details)
@@ -96,5 +95,5 @@ def main():
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-    DEFAULT_CONFIG_FILE = 'configs/cae/cae_baseline_lunar_analogue.yaml'
+    DEFAULT_CONFIG_FILE = 'configs/cae/cae_baseline_lunar_analogue_whole.yaml'
     main()

@@ -5,10 +5,10 @@ lightning_logs/
 saved-models/
 logs/
 test_logs/
-utils/scripts/*.png
+
 
 # Scrap testing files
-utils/scripts/*.ipynb
+utils/scripts/*
 
 *.ckpt
 *.swp

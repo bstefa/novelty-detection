@@ -11,7 +11,7 @@ from datasets import supported_datamodules
 class TestLunarAnalogueData(unittest.TestCase):
 
     def test_whole_image_preprocessing(self):
-        self.cae_config = tools.load_config('configs/cae/cae_baseline_lunar_analogue.yaml', silent=True)
+        self.cae_config = tools.load_config('configs/cae/cae_baseline_lunar_analogue_whole.yaml', silent=True)
         preprocessing_transforms = supported_preprocessing_transforms['LunarAnalogueWholeImage']
 
         self.dm = supported_datamodules['LunarAnalogueDataModule'](
@@ -29,7 +29,7 @@ class TestLunarAnalogueData(unittest.TestCase):
 
     def test_region_extraction_preprocessing(self):
 
-        self.cae_config = tools.load_config('configs/cae/cae_baseline_lunar_analogue_nre.yaml', silent=True)
+        self.cae_config = tools.load_config('configs/cae/cae_baseline_lunar_analogue_region.yaml', silent=True)
         preprocessing_transforms = supported_preprocessing_transforms['LunarAnalogueRegionExtractor']
 
         self.dm = supported_datamodules['LunarAnalogueDataModule'](

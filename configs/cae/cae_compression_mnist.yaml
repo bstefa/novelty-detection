@@ -30,6 +30,10 @@ data-parameters:
   # Set to null for default.
   batch_size: 1024
 
+  # preprocessing (required, str): The preprocessing transforms applied to each image before being imported for
+  # training, validation, or testing. Options are found in utils/__init__.py.
+  preprocessing: 'NoveltyMNISTPreprocessing'
+
 
 # module-parameters: Contains hyperparameters used when training the model.
 module-parameters:

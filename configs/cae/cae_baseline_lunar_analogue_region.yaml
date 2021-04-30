@@ -34,8 +34,12 @@ data-parameters:
   # Set to null for default.
   batch_size: 32
 
+  # use_custom_collate_fn (required, bool): Specifies if the custom collation function is to be used. This flag MUST
+  # be set to true is training or testing the novel region extractor form of the Lunar Analogue data.
   use_custom_collate_fn: true
 
+  # preprocessing (required, str): The preprocessing transforms applied to each image before being imported for
+  # training, validation, or testing. Options are found in utils/__init__.py.
   preprocessing: 'LunarAnalogueRegionExtractor'
 
 
