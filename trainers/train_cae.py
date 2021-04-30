@@ -29,6 +29,12 @@ def main():
     assert ('CAE' in exp_params['model']), \
         'Only accepts CAE-type models for training, check your configuration file.'
 
+    # What I should do is set up the data transforms directly in the training script, this can
+    # be outsourced to a configuration file later.
+    preprocessing_transforms = Compose([
+
+    ])
+
     # Initialize datamodule (see datasets/__init__.py for details)
     datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
     datamodule.prepare_data()

@@ -1,6 +1,5 @@
 import unittest
 import torch
-import pytorch_lightning as pl
 
 from pathlib import Path
 from utils import tools

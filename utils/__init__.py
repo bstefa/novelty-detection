@@ -8,14 +8,13 @@ LunarAnalogueWholeImage = transforms.Compose([
 ])
 
 LunarAnalogueRegionExtractor = transforms.Compose([
-    LunarAnaloguePreprocessingPipeline(),
-    unstandardize_batch,
-    NovelRegionExtractorPipeline(),
-    transforms.Lambda(lambda regions: torch.stack([transforms.ToTensor()(region) for region in regions])),
-    transforms.Lambda(lambda x: x.to(dtype=torch.float32))
+    LunarAnaloguePreprocessingPipeline(normalize='zero_to_one'),
+    NovelRegionExtractorPipeline(view_region_proposals=True),
+    # transforms.Lambda(lambda regions: torch.stack([transforms.ToTensor()(region) for region in regions])),
+    # transforms.Lambda(lambda x: x.to(dtype=torch.float32))
 ])
 
-supported_preprocessors = {
+supported_preprocessing_transforms = {
     'LunarAnalogueWholeImage': LunarAnalogueWholeImage,
     'LunarAnalogueRegionExtractor': LunarAnalogueRegionExtractor
 }

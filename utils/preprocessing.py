@@ -1,6 +1,8 @@
 import cv2 as cv
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 from sklearn.cluster import KMeans
 
@@ -13,16 +15,17 @@ class NovelRegionExtractorPipeline:
     Conceptually this class would be called after another preprocessing
     pipeline is applied first, such as LunarAnaloguePreprocessingPipeline
     """
-    def __init__(self, n_regions: int = 16, region_shape: tuple = (64, 64, 3)):
+    def __init__(self, n_regions: int = 32, region_shape: tuple = (64, 64, 3), view_region_proposals=False):
         super().__init__()
 
         self.n_regions = n_regions
         self.region_shape = region_shape
+        self._view_region_proposals = view_region_proposals
 
         self._ss = cv.ximgproc.segmentation.createSelectiveSearchSegmentation()
         self._kmeans = KMeans(n_clusters=n_regions)
 
-    def __call__(self, image: np.ndarray) -> np.ndarray:
+    def __call__(self, image: np.ndarray):
         # Currently, images are assumed to be in RGB form with intensities in the range [0, 1]
 
         # Initialize selective search algorithm with fast search strategy
@@ -34,19 +37,32 @@ class NovelRegionExtractorPipeline:
 
         # Filter rectangles according to total area between defined quantiles
         areas = [w * h for (_, _, w, h) in rects]
-        area_low, area_high = np.quantile(areas, [0.50, 0.95])
+        area_low, area_high = np.quantile(areas, [0.50, 1.0])
         keep_rects = rects[(areas > area_low) & (areas < area_high)]
 
         self._kmeans.fit(keep_rects)
         warped_crops = np.empty((self.n_regions, *self.region_shape))
+        crop_bboxes = np.empty((self.n_regions, 4))
 
         for i, (x, y, w, h) in enumerate(self._kmeans.cluster_centers_):
             x, y, w, h = int(x), int(y), int(w), int(h)
             crop = image[y:y+h, x:x+w]
             warped_crop = cv.resize(crop, (self.region_shape[0], self.region_shape[1]), interpolation=cv.INTER_CUBIC)
+
+            # TODO: Build normalization into each warped crop...
+
+            crop_bboxes[i] = np.array([x, y, w, h])
             warped_crops[i] = warped_crop
 
-        return warped_crops
+        if self._view_region_proposals:
+            fig, ax = plt.subplots()
+            ax.imshow(image)
+            for crop in crop_bboxes:
+                rect = patches.Rectangle((crop[0], crop[1]), crop[2], crop[3], facecolor='none', edgecolor='r')
+                ax.add_patch(rect)
+            plt.show()
+
+        return warped_crops, crop_bboxes
 
 
 class LunarAnaloguePreprocessingPipeline:
@@ -61,13 +77,25 @@ class LunarAnaloguePreprocessingPipeline:
     for more information on the steps used here.
     """
 
-    def __init__(self):
-        return
+    def __init__(self, normalize: str = 'standard', scale: float = 1/5):
+        assert any( (normalize == rout for rout in ('standard', 'zero_to_one')) ), \
+            'Unsupported normalization routine, must be one of: standard, zero_to_one'
+        assert (0. <= scale <= 1.), \
+            'Scaling factor must be between 0 and 1'
+        self._normalize = normalize
+        self._scale = scale
 
     def __call__(self, image: np.ndarray) -> np.ndarray:
+        assert (len(image.shape) == 3), \
+            'Lunar Analogue images must have 3 dimensions'
+        assert (image.shape[-1] == 3), \
+            'Lunar Analogue images must be 3-channel RGB/YCrCb'
         n_channels = image.shape[-1]
 
-        image = cv.resize(image, (256, 256), interpolation=cv.INTER_AREA)
+        # Here we want to preserve the aspect ratio
+        h = int(image.shape[0] * self._scale)
+        w = int(image.shape[1] * self._scale)
+        image = cv.resize(image, (w, h), interpolation=cv.INTER_AREA)
 
         # To conduct histogram equalization you have to operate on the intensity
         # values of the image, so a different color space is required
@@ -82,9 +110,12 @@ class LunarAnaloguePreprocessingPipeline:
         # Convert image dtype to float
         image = np.float32(image)
 
-        # Standardize image
-        for c in range(n_channels):
-            image[..., c] = (image[..., c] - image[..., c].mean()) / image[..., c].std()
+        # Normalize image
+        if self._normalize == 'standard':
+            for c in range(n_channels):
+                image[..., c] = (image[..., c] - image[..., c].mean()) / image[..., c].std()
+        elif self._normalize == 'zero_to_one':
+            image = (image - image.min()) / (image.max() - image.min())
 
         return image
 

@@ -1,17 +1,45 @@
 # Datasets used in Novelty detection experiments
 # Author: Braden Stefanuk
 # Created: Dec 17, 2020
-
+import json
 import torch
 import numpy as np
 
 from pathlib import Path
-from torchvision import transforms
+from torch.utils.data.dataloader import default_collate
 from skimage import io
 from sklearn.model_selection import train_test_split
-from utils import tools, preprocessing
+from utils import preprocessing
 
 from datasets.base import BaseDataModule
+
+
+def collate_nre(batch):
+    """
+    Custom collate function for managing how the supporting labels are imported along with the data.
+    Called conditionally in LunarAnalogueDataModule.x_dataloader()
+    """
+    _, dummy_label = batch[0]
+    num_crops = dummy_label['cr_bboxes'].shape[0]
+    batch_image = []
+    batch_filepaths = []
+    batch_gt_bboxes = []
+    batch_cr_bboxes = []
+
+    for image, label_dict in batch:
+        batch_image.append(image)
+
+        batch_filepaths.append(label_dict['filepath']*num_crops)
+        batch_gt_bboxes.append([label_dict['gt_bbox']]*num_crops)
+        batch_cr_bboxes.append(label_dict['cr_bboxes'])
+
+    labels = {
+        'filepaths': np.stack(batch_filepaths),
+        'gt_bboxes': np.stack(batch_gt_bboxes),
+        'cr_bboxes': np.stack(batch_cr_bboxes)
+    }
+    # Use default collate on the images, but collate the images manually
+    return default_collate(batch_image), labels
 
 
 class LunarAnalogueDataset(torch.utils.data.Dataset):
@@ -37,12 +65,34 @@ class LunarAnalogueDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx: int):
         image = io.imread(str(self._list_of_image_paths[idx]))
+
         if self._data_transforms:
             image = self._data_transforms(image)
 
-        return image, torch.tensor(self.get_label(idx))
+        if len(image) == 2 and isinstance(image, tuple):
+            # Then we're working with NRE data
+            image, cr_bbox = image
+            label = self.get_label_nre(cr_bbox, idx)
+        else:
+            label = self.get_label_whole_image(idx)
 
-    def get_label(self, idx: int):
+        return image, label
+
+    def get_label_nre(self, cr_bbox, idx: int):
+        pth = self._list_of_image_paths[idx]
+
+        if 'typical' in str(pth) or 'trainval' in str(pth):
+            gt_bbox = [-1]
+        elif 'novel' in str(pth):
+            with open(pth.parent.parent / 'bbox' / f'{pth.stem}.json', 'r') as f:
+                gt_bbox_list = json.load(f)
+            gt_bbox = [v for v in gt_bbox_list[0].values()]  # Take only the first ground truth box, for simplicity
+        else:
+            raise ValueError('Cannot find typical/ or novel/ in file path')
+
+        return {'filepath': [str(pth)], 'gt_bbox': gt_bbox, 'cr_bboxes': cr_bbox}
+
+    def get_label_whole_image(self, idx: int):
         path_string = str(self._list_of_image_paths[idx])
 
         if 'typical' in path_string or 'train' in path_string:
@@ -61,7 +111,7 @@ class LunarAnalogueDataModule(BaseDataModule):
             root_data_path: str,
             batch_size: int = 8,
             train_fraction: float = 0.8,
-
+            data_transforms=None,
             **kwargs
     ):
         super(LunarAnalogueDataModule, self).__init__()
@@ -71,15 +121,11 @@ class LunarAnalogueDataModule(BaseDataModule):
         self._val_fraction = 1 - self._train_fraction
         self._root_data_path = root_data_path
 
-        # TODO: Enable optional flag to start novel region extractor pipeline
-        # TODO: Find a way to incorporate labels into novel region extractor pipeline
-        self._data_transforms = transforms.Compose([
-            preprocessing.LunarAnaloguePreprocessingPipeline(),
-            # tools.unstandardize_batch,
-            # preprocessing.NovelRegionExtractorPipeline(),
-            # transforms.Lambda(lambda regions: torch.stack([transforms.ToTensor()(region) for region in regions])),
-            # transforms.Lambda(lambda x: x.to(dtype=torch.float32))
-        ])
+        self._data_transforms = data_transforms
+        if 'use_custom_collate_fn' in kwargs and kwargs['use_custom_collate_fn'] is True:
+            self._use_custom_collate_fn = True
+        else:
+            self._use_custom_collate_fn = False
 
         # Handle the default and optionally passed additional kwargs
         self._glob_pattern_train = 'trainval/*.jpeg'
@@ -127,7 +173,8 @@ class LunarAnalogueDataModule(BaseDataModule):
             self._train_set,
             batch_size=self._batch_size,
             drop_last=True,
-            num_workers=8
+            num_workers=8,
+            collate_fn=collate_nre if self._use_custom_collate_fn else default_collate
         )
 
     def val_dataloader(self):
@@ -135,7 +182,8 @@ class LunarAnalogueDataModule(BaseDataModule):
             self._val_set,
             batch_size=self._batch_size,
             drop_last=True,
-            num_workers=8
+            num_workers=8,
+            collate_fn=collate_nre if self._use_custom_collate_fn else default_collate
         )
 
     def test_dataloader(self):
@@ -143,7 +191,8 @@ class LunarAnalogueDataModule(BaseDataModule):
             self._test_set,
             batch_size=self._batch_size,
             drop_last=True,
-            num_workers=8
+            num_workers=8,
+            collate_fn=collate_nre if self._use_custom_collate_fn else default_collate
         )
 
 
