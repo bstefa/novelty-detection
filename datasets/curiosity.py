@@ -16,10 +16,8 @@ Assumes data is structured as follows:
 Author: Braden Stefanuk
 Created: Mar. 18, 2021
 """
-import torch
-import numpy as np
-
 from datasets.base import BaseDataModule
+from utils import tools
 from utils.dtypes import *
 
 
@@ -72,9 +70,9 @@ class CuriosityDataModule(BaseDataModule):
     def __init__(
             self,
             root_data_path: str,
+            data_transforms: Compose,
             batch_size: int = 8,
             train_fraction: float = 0.85,
-            data_transforms=None,
             **kwargs):
         super().__init__()
 
@@ -85,7 +83,7 @@ class CuriosityDataModule(BaseDataModule):
         self._val_fraction = 1 - self._train_fraction
 
         assert (data_transforms is not None), \
-            'Changes have been made. Data transforms must now be defined in the training script. See utils/__init__.py.'
+            'Data transforms must be defined in the training script. See utils/__init__.py.'
         self._data_transforms = data_transforms
 
     def prepare_data(self):

@@ -61,9 +61,9 @@ class NoveltyMNISTDataModule(BaseDataModule):
     def __init__(
             self,
             root_data_path: str,
+            data_transforms: Compose,
             batch_size: int = 8,
             train_fraction: float = 0.8,
-            data_transforms=None,
             **kwargs):
         super().__init__()
 

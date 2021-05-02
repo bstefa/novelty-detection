@@ -50,12 +50,12 @@ class NovelRegionExtractorPipeline:
 
         area_low, area_high = np.quantile(areas, [0.3, 1.])
         whaspect_low, whaspect_high = np.quantile(whaspects, [0., 0.8])
-        hwaspect_low, hwaspect_high = np.quantile(1/whaspects, [0., 0.8])
+        # hwaspect_low, hwaspect_high = np.quantile(1/whaspects, [0., 0.8])
 
         keep_rects = rects[
             (areas > area_low) & (areas < area_high) &
             (whaspects > whaspect_low) & (whaspects < whaspect_high)
-            & ((1/whaspects) > hwaspect_low) & ((1/whaspects) < hwaspect_high)
+            # & ((1/whaspects) > hwaspect_low) & ((1/whaspects) < hwaspect_high)
         ]
 
         self._kmeans.fit(keep_rects)
@@ -66,8 +66,6 @@ class NovelRegionExtractorPipeline:
             x, y, w, h = int(x), int(y), int(w), int(h)
             crop = image[y:y+h, x:x+w]
             warped_crop = cv.resize(crop, (self.region_shape[0], self.region_shape[1]), interpolation=cv.INTER_CUBIC)
-
-            # TODO: Build normalization into each warped crop...
 
             crop_bboxes[i] = np.array([x, y, w, h])
             warped_crops[i] = warped_crop
@@ -81,7 +79,7 @@ class NovelRegionExtractorPipeline:
             plt.show()
 
         if self._return_tensor:
-            warped_crops = torch.tensor(warped_crops).permute(0, 3, 1, 2)
+            warped_crops = torch.tensor(warped_crops).permute(0, 3, 1, 2).to(dtype=torch.float32)
         return warped_crops, crop_bboxes
 
 

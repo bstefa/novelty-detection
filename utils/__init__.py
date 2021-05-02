@@ -3,25 +3,27 @@ from .preprocessing import *
 from torchvision import transforms
 
 
-NoveltyMNISTPreproccesing = transforms.Compose([
-    NoveltyMNISTPreprocessingPipeline()
-])
-
 CuriosityPreprocessing = transforms.Compose([
     CuriosityPreprocessingPipeline(),
     transforms.ToTensor()
 ])
 
 LunarAnalogueWholeImage = transforms.Compose([
-    LunarAnaloguePreprocessingPipeline(),
+    LunarAnaloguePreprocessingPipeline(normalize='standard'),
     transforms.ToTensor()
 ])
 
-# Because of the fancy labelling and collation ToTensor cannot be applied to this
-# transform. It needs to return images as correctly formatted tensors
+# Because of the fancy labelling and collation, ToTensor cannot be applied to this
+# transform. Formatting and type casting of tensors is handled in the NovelRegion
 LunarAnalogueRegionExtractor = transforms.Compose([
     LunarAnaloguePreprocessingPipeline(normalize='zero_to_one'),
-    NovelRegionExtractorPipeline(view_region_proposals=False),
+    NovelRegionExtractorPipeline(return_tensor=True),
+])
+
+# Novelty MNIST doesn't need to be transformed to a Tensor because the data
+# is already in Tensor format upon importing
+NoveltyMNISTPreproccesing = transforms.Compose([
+    NoveltyMNISTPreprocessingPipeline()
 ])
 
 supported_preprocessing_transforms = {

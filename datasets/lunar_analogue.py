@@ -10,7 +10,7 @@ from torch.utils.data.dataloader import default_collate
 from skimage import io
 from sklearn.model_selection import train_test_split
 from utils import preprocessing
-
+from utils.dtypes import *
 from datasets.base import BaseDataModule
 
 
@@ -112,9 +112,9 @@ class LunarAnalogueDataModule(BaseDataModule):
     def __init__(
             self,
             root_data_path: str,
+            data_transforms: Compose,
             batch_size: int = 8,
             train_fraction: float = 0.8,
-            data_transforms=None,
             **kwargs
     ):
         super(LunarAnalogueDataModule, self).__init__()

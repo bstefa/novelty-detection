@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 from models import supported_models
 from datasets import supported_datamodules
 from modules.aae_base_module import AAEBaseModule
-from utils import tools, callbacks
+from utils import tools, callbacks, supported_preprocessing_transforms
 from functools import reduce
 
 import logging
@@ -19,11 +19,20 @@ def main():
     exp_params = config['experiment-parameters']
     data_params = config['data-parameters']
     module_params = config['module-parameters']
+
+    # Catch a few early common bugs
     assert ('AAE' in exp_params['model']), \
         'Only accepts AAE-type models for training, check your configuration file.'
+    if 'RegionExtractor' in data_params['preprocessing']:
+        assert (data_params['use_custom_collate_fn'] is True)
+
+    # Set up preprocessing routine
+    preprocessing_transforms = supported_preprocessing_transforms[data_params['preprocessing']]
 
     # Initialize datamodule
-    datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
+    datamodule = supported_datamodules[exp_params['datamodule']](
+        data_transforms=preprocessing_transforms,
+        **data_params)
     datamodule.prepare_data()
     datamodule.setup('train')
 

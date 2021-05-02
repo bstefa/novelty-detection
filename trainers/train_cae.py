@@ -26,8 +26,12 @@ def main():
     exp_params = config['experiment-parameters']
     data_params = config['data-parameters']
     module_params = config['module-parameters']
+
+    # Catch a few early, common bugs
     assert ('CAE' in exp_params['model']), \
         'Only accepts CAE-type models for training, check your configuration file.'
+    if 'RegionExtractor' in data_params['preprocessing']:
+        assert (data_params['use_custom_collate_fn'] is True)
 
     # Set up preprocessing routine
     preprocessing_transforms = supported_preprocessing_transforms[data_params['preprocessing']]
@@ -38,7 +42,6 @@ def main():
         **data_params)
     datamodule.prepare_data()
     datamodule.setup('train')
-    logging.debug(datamodule.data_shape)
 
     # Note that Pytorch uses the convention of shaping data as [..., C, H, W] as opposed
     # to [..., H, W, C]. When using a region extractor, the shape of the returned data may

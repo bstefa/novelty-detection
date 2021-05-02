@@ -3,11 +3,8 @@ import glob
 import unittest
 import pytorch_lightning as pl
 
-import logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-
 from pathlib import Path
-from utils import tools, callbacks
+from utils import tools, callbacks, supported_preprocessing_transforms
 from modules.cae_base_module import CAEBaseModule
 from datasets import supported_datamodules
 from models import supported_models
@@ -19,7 +16,7 @@ class TestCAETraining(unittest.TestCase):
 
         config_paths = glob.glob('configs/cae/**')
         for pth in config_paths:
-            logging.info(f"Testing training for: {pth}")
+            print(f'Testing training for: {pth}')
             config = tools.load_config(pth)
 
             module = _test_training_pipeline(config)
@@ -29,7 +26,6 @@ class TestCAETraining(unittest.TestCase):
                 config['experiment-parameters']['datamodule'] / \
                 config['experiment-parameters']['model'] / \
                 f'version_{module.version}'
-            logging.info(log_path)
 
             self.assertTrue( (log_path / 'checkpoints').is_dir() )
             self.assertTrue( (log_path / 'configuration.yaml').is_file() )
@@ -40,7 +36,11 @@ def _test_training_pipeline(config):
     # Change log_dir for testing
     config['experiment-parameters']['log_dir'] = os.path.join('tests', 'test_logs')
 
+    # Set up preprocessing routine
+    preprocessing_transforms = supported_preprocessing_transforms[config['data-parameters']['preprocessing']]
+
     datamodule = supported_datamodules[config['experiment-parameters']['datamodule']](
+        data_transforms=preprocessing_transforms,
         **config['data-parameters'])
     datamodule.prepare_data()
     datamodule.setup('train')

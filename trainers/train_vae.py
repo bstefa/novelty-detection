@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 from models import supported_models
 from datasets import supported_datamodules
 from modules.vae_base_module import VAEBaseModule
-from utils import tools, callbacks
+from utils import tools, callbacks, supported_preprocessing_transforms
 # from torchsummary import summary
 
 
@@ -18,21 +18,27 @@ def main():
     exp_params = config['experiment-parameters']
     data_params = config['data-parameters']
     module_params = config['module-parameters']
+
+    # Catch few early, common bugs
     assert ('VAE' in exp_params['model']), \
         'Only accepts VAE-type models for training, check your configuration file.'
+    if 'RegionExtractor' in data_params['preprocessing']:
+        assert (data_params['use_custom_collate_fn'] is True)
+
+    # Set up preprocessing routine
+    preprocessing_transforms = supported_preprocessing_transforms[data_params['preprocessing']]
 
     # Initialize datamodule
     print('[INFO] Initializing datamodule..')
-    datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
+    datamodule = supported_datamodules[exp_params['datamodule']](
+        data_transforms=preprocessing_transforms,
+        **data_params)
     datamodule.prepare_data()
     datamodule.setup('train')
 
     # Initialize model
     print('[INFO] Initializing model..')
     model = supported_models[exp_params['model']](datamodule.data_shape, **module_params)
-
-    # View a summary of the model
-    # summary(model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')), datamodule.shape)
 
     # Initialize module
     print('[INFO] Initializing module..')
