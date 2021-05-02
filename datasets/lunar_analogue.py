@@ -85,11 +85,12 @@ class LunarAnalogueDataset(torch.utils.data.Dataset):
         pth = self._list_of_image_paths[idx]
 
         if 'typical' in str(pth) or 'trainval' in str(pth):
-            gt_bbox = [0, 0, 0, 0]
+            gt_bbox = np.array([0, 0, 0, 0])
         elif 'novel' in str(pth):
             with open(pth.parent.parent / 'bbox' / f'{pth.stem}.json', 'r') as f:
                 gt_bbox_list = json.load(f)
-            gt_bbox = [v for v in gt_bbox_list[0].values()]  # Take only the first ground truth box, for simplicity
+            # Take only the first ground truth box, for simplicity
+            gt_bbox = np.array([v for v in gt_bbox_list[0].values()])
         else:
             raise ValueError('Cannot find typical/ or novel/ in file path')
 
@@ -108,7 +109,6 @@ class LunarAnalogueDataset(torch.utils.data.Dataset):
 
 class LunarAnalogueDataModule(BaseDataModule):
     """For use with Pytorch models only"""
-
     def __init__(
             self,
             root_data_path: str,
