@@ -1,4 +1,5 @@
 import torch
+import time
 import os
 import pytorch_lightning as pl
 
@@ -24,7 +25,7 @@ def main():
     assert ('AAE' in exp_params['model']), \
         'Only accepts AAE-type models for training, check your configuration file.'
     if 'RegionExtractor' in data_params['preprocessing']:
-        assert (data_params['use_custom_collate_fn'] is True)
+        assert (data_params['use_nre_collation'] is True)
 
     # Set up preprocessing routine
     preprocessing_transforms = supported_preprocessing_transforms[data_params['preprocessing']]
@@ -83,4 +84,7 @@ def main():
 
 if __name__ == '__main__':
     DEFAULT_CONFIG_FILE = 'configs/aae/aae_simple_mnist.yaml'
+
+    start = time.time()
     main()
+    print(f'Training took {time.time() - start:.3f}s')

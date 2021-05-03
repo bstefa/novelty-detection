@@ -43,6 +43,10 @@ data-parameters:
 # module-parameters: Contains hyperparameters used when training the model.
 module-parameters:
 
+  # latent_dims (required, int):
+  # Number of dimensions to use in the latent space.
+  latent_nodes: 10
+
   # learning_rate (optional, float, default='auto'): Scaling factor for gradient descent step.
   # Set to 'auto' for default.
   learning_rate: 0.0001
@@ -50,6 +54,3 @@ module-parameters:
   # weight_decay_coefficient (optional, float, default=0.01): Scaling factor for loss regularization term.
   # Set to null for default.
   weight_decay_coefficient: 0.001
-
-  # latent_dims (required, int): Number of dimensions to use in the latent space of the VAE
-  latent_nodes: 10

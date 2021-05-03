@@ -5,7 +5,7 @@ from utils.dtypes import *
 
 
 class Encoder(nn.Module):
-    def __init__(self, in_nodes: int, latent_nodes: int = 8):
+    def __init__(self, in_nodes: int, latent_nodes: int):
         super(Encoder, self).__init__()
 
         # TODO: Consider initializing the weights explicitly here

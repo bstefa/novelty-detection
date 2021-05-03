@@ -36,7 +36,7 @@ data-parameters:
 
   # use_custom_collate_fn (required, bool): Specifies if the custom collation function is to be used. This flag MUST
   # be set to true is training or testing the novel region extractor form of the Lunar Analogue data.
-  use_custom_collate_fn: true
+  use_nre_collation: true
 
   # preprocessing (required, str): The preprocessing transforms applied to each image before being imported for
   # training, validation, or testing. Options are found in utils/__init__.py.
@@ -48,7 +48,7 @@ module-parameters:
 
   # learning_rate (optional, float, default='auto'): Scaling factor for gradient descent step.
   # Set to null for default.
-  learning_rate: 0.002
+  learning_rate: null
 
   # weight_decay_coefficient (optional, float, default=0.01): Scaling factor for loss regularization term.
   # Set to null for default.

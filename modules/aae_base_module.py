@@ -25,7 +25,7 @@ class AAEBaseModule(pl.LightningModule):
         self.generator_loss = model.generator_loss
 
         self.lr = learning_rate if learning_rate is not None else 0.001
-        self.wd = weight_decay_coefficient
+        self.wd = weight_decay_coefficient if weight_decay_coefficient is not None else 0.01
         self._batch_size = batch_size if batch_size is not None else 8
 
     def configure_optimizers(self):
@@ -47,8 +47,8 @@ class AAEBaseModule(pl.LightningModule):
         # See github.com/brahste/novelty-detection/figures/SimpleAAESchematic
 
         # Manage data layout
-        batch_in, _ = batch
-        batch_in = batch_in.view(self._batch_size, -1)  # Keep batch dimension, but flatten all others
+        batch_in, _ = self.handle_batch_shape(batch)
+        batch_in = batch_in.view(batch_in.shape[0], -1)  # Keep batch dimension, but flatten all others
 
         # Reconstruction phase
         # ------
@@ -71,8 +71,8 @@ class AAEBaseModule(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         # Validate with reconstruction loss
-        batch_in, _ = batch
-        batch_in = batch_in.view(self._batch_size, -1)
+        batch_in, _ = self.handle_batch_shape(batch)
+        batch_in = batch_in.view(batch_in.shape[0], -1)
 
         reconstruction_loss = self.reconstruction_loss(batch_in)
         self.log('val_r_loss', reconstruction_loss, prog_bar=True)
@@ -80,9 +80,9 @@ class AAEBaseModule(pl.LightningModule):
 
     def test_step(self, batch, batch_nb):
 
-        batch_in, batch_labels = batch
+        batch_in, batch_labels = self.handle_batch_shape(batch)
         image_shape = batch_in.shape
-        batch_in = batch_in.view(self._batch_size, -1)
+        batch_in = batch_in.view(batch_in.shape[0], -1)
 
         batch_lt = self.encoder(batch_in)
         batch_rc = self.decoder(batch_lt)
@@ -103,6 +103,17 @@ class AAEBaseModule(pl.LightningModule):
                 'batch_lt': batch_lt.detach()
             }
         }
+
+    @staticmethod
+    def handle_batch_shape(batch):
+        '''
+        Conducts an inplace operation to merge regions and batch size if NRE is being used.
+        '''
+        batch_in, _ = batch
+        assert any(len(batch_in.shape) == s for s in (4, 5)), f'Batch must have 4 or 5 dims, got {len(batch_in.shape)}'
+        if len(batch_in.shape) == 5:
+            batch_in = batch_in.view(-1, *batch_in.shape[2:])
+        return batch_in, _
 
     @property
     def version(self):

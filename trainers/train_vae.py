@@ -1,4 +1,5 @@
 import os
+import time
 import logging
 import torch
 import pytorch_lightning as pl
@@ -99,4 +100,7 @@ def main():
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
     DEFAULT_CONFIG_FILE = 'configs/vae/vae_simple_mnist.yaml'
+
+    start = time.time()
     main()
+    print(f'Training took {time.time() - start:.3f}s')

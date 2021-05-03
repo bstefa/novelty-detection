@@ -125,10 +125,10 @@ class LunarAnalogueDataModule(BaseDataModule):
         self._root_data_path = root_data_path
 
         self._data_transforms = data_transforms
-        if 'use_custom_collate_fn' in kwargs and kwargs['use_custom_collate_fn'] is True:
-            self._use_custom_collate_fn = True
+        if 'use_nre_collation' in kwargs and kwargs['use_nre_collation'] is True:
+            self._use_nre_collation = True
         else:
-            self._use_custom_collate_fn = False
+            self._use_nre_collation = False
 
         # Handle the default and optionally passed additional kwargs
         self._glob_pattern_train = 'trainval/**/*.jpeg'
@@ -177,7 +177,7 @@ class LunarAnalogueDataModule(BaseDataModule):
             batch_size=self._batch_size,
             drop_last=True,
             num_workers=12,
-            collate_fn=collate_nre if self._use_custom_collate_fn else default_collate
+            collate_fn=collate_nre if self._use_nre_collation else default_collate
         )
 
     def val_dataloader(self):
@@ -186,7 +186,7 @@ class LunarAnalogueDataModule(BaseDataModule):
             batch_size=self._batch_size,
             drop_last=True,
             num_workers=12,
-            collate_fn=collate_nre if self._use_custom_collate_fn else default_collate
+            collate_fn=collate_nre if self._use_nre_collation else default_collate
         )
 
     def test_dataloader(self):
@@ -195,7 +195,7 @@ class LunarAnalogueDataModule(BaseDataModule):
             batch_size=self._batch_size,
             drop_last=True,
             num_workers=12,
-            collate_fn=collate_nre if self._use_custom_collate_fn else default_collate
+            collate_fn=collate_nre if self._use_nre_collation else default_collate
         )
 
 

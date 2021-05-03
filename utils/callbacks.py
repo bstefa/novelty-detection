@@ -96,7 +96,7 @@ def _handle_image_logging(images: dict, pl_module) -> None:
     _log_images(compute, pl_module)
 
 
-class DataIntegrityCallback(pl.callbacks.base.Callback):
+class NREDataShapeHandlerCallback(pl.callbacks.base.Callback):
     """This callback manages the shapes for data with a region dimension"""
     def __init__(self):
         pass
@@ -153,7 +153,7 @@ class AAEVisualization(pl.callbacks.base.Callback):
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if self._save_at_train_step == pl_module.global_step:
 
-            batch_in, _ = batch
+            batch_in, _ = pl_module.handle_batch_shape(batch)
             batch_in = batch_in.detach()
             image_shape = batch_in.shape
 

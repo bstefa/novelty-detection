@@ -31,7 +31,7 @@ class VAEBaseModule(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
 
-        batch_in, _ = batch
+        batch_in, _ = self.handle_batch_shape(batch)
         batch_rc, mu, log_var = self.forward(batch_in)
 
         elbo_loss, rc_loss, kld_loss = self.model.loss_function(
@@ -42,7 +42,7 @@ class VAEBaseModule(pl.LightningModule):
         return result  # Needs 'loss' key in return dict
 
     def validation_step(self, batch, batch_idx):
-        batch_in, _ = batch
+        batch_in, _ = self.handle_batch_shape(batch)
 
         batch_rc, mu, log_var = self.forward(batch_in)
 
@@ -54,7 +54,7 @@ class VAEBaseModule(pl.LightningModule):
         return result
 
     def test_step(self, batch, batch_nb):
-        batch_in, batch_labels = batch
+        batch_in, batch_labels = self.handle_batch_shape(batch)
         recons = self.model.generate(batch_in)
 
         mse_loss = torch.nn.MSELoss(reduction='none')
@@ -67,6 +67,17 @@ class VAEBaseModule(pl.LightningModule):
             'recons': recons
         }
         return results
+
+    @staticmethod
+    def handle_batch_shape(batch):
+        """
+        Conducts an inplace operation to merge regions and batch size if neceassary
+        """
+        batch_in, _ = batch
+        assert any(len(batch_in.shape) == s for s in (4, 5)), f'Batch must have 4 or 5 dims, got {len(batch_in.shape)}'
+        if len(batch_in.shape) == 5:
+            batch_in = batch_in.view(-1, *batch_in.shape[2:])
+        return batch_in, _
 
     @property
     def version(self):

@@ -48,14 +48,14 @@ class NovelRegionExtractorPipeline:
             areas[i] = w * h
             whaspects[i] = w / h
 
-        area_low, area_high = np.quantile(areas, [0.3, 1.])
-        whaspect_low, whaspect_high = np.quantile(whaspects, [0., 0.8])
-        # hwaspect_low, hwaspect_high = np.quantile(1/whaspects, [0., 0.8])
+        area_low, area_high = np.quantile(areas, [0.2, 1.])
+        whaspect_low, whaspect_high = np.quantile(whaspects, [0., 0.9])
+        hwaspect_low, hwaspect_high = np.quantile(1/whaspects, [0., 0.9])
 
         keep_rects = rects[
             (areas > area_low) & (areas < area_high) &
             (whaspects > whaspect_low) & (whaspects < whaspect_high)
-            # & ((1/whaspects) > hwaspect_low) & ((1/whaspects) < hwaspect_high)
+            & ((1/whaspects) > hwaspect_low) & ((1/whaspects) < hwaspect_high)
         ]
 
         self._kmeans.fit(keep_rects)
