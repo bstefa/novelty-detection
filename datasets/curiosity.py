@@ -16,8 +16,12 @@ Assumes data is structured as follows:
 Author: Braden Stefanuk
 Created: Mar. 18, 2021
 """
-from datasets.base import BaseDataModule
+
+import torch
+import numpy as np
+
 from utils import tools
+from datasets.base import BaseDataModule
 from utils.dtypes import *
 
 

@@ -181,6 +181,7 @@ class VAEVisualization(pl.callbacks.base.Callback):
 
     def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if batch_idx == 1 and pl_module.logger.version is not None:
+
             batch_in, _ = pl_module.handle_batch_shape(batch)
             batch_in = batch_in.detach().to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 
