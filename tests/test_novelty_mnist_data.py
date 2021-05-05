@@ -1,9 +1,8 @@
 import unittest
 import torch
-import pytorch_lightning as pl
 
 from pathlib import Path
-from utils import tools
+from utils import tools, supported_preprocessing_transforms
 from datasets import supported_datamodules
 from models.cae_baseline import BaselineCAE
 
@@ -12,7 +11,10 @@ class TestNoveltyMNISTData(unittest.TestCase):
 
     def setUp(self):
         self.cae_config = tools.load_config('configs/cae/cae_baseline_mnist.yaml', silent=True)
-        self.dm = supported_datamodules['NoveltyMNISTDataModule'](**self.cae_config['data-parameters'])
+        preprocessing_transforms = supported_preprocessing_transforms[self.cae_config['data-parameters']['preprocessing']]
+        self.dm = supported_datamodules['NoveltyMNISTDataModule'](
+            data_transforms=preprocessing_transforms,
+            **self.cae_config['data-parameters'])
 
     def test_datamodule_instantiation(self):
         self.assertTrue(Path(self.dm._root_data_path).is_dir())
@@ -45,7 +47,7 @@ class TestNoveltyMNISTData(unittest.TestCase):
         self.dm.setup('train')
         self.dm.setup('test')
 
-        model = BaselineCAE(in_chans=self.dm.data_shape[0])
+        model = BaselineCAE(in_shape=self.dm.data_shape)
 
         def test_x_step(dataloader):
             data, label = next(iter(dataloader))

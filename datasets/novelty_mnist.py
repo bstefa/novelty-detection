@@ -2,7 +2,6 @@ import os
 import torch
 import numpy as np
 
-from utils import preprocessing
 from utils.dtypes import *
 
 from datasets.base import BaseDataModule
@@ -62,6 +61,7 @@ class NoveltyMNISTDataModule(BaseDataModule):
     def __init__(
             self,
             root_data_path: str,
+            data_transforms: Compose,
             batch_size: int = 8,
             train_fraction: float = 0.8,
             **kwargs):
@@ -70,7 +70,10 @@ class NoveltyMNISTDataModule(BaseDataModule):
         self._root_data_path = root_data_path
         self._batch_size = batch_size if batch_size is not None else 8
         self._train_fraction = train_fraction if train_fraction is not None else 0.8
-        self._data_transforms = preprocessing.NoveltyMNISTPreprocessingPipeline()
+
+        assert (data_transforms is not None), \
+            'Changes have been made. Data transforms must now be defined in the training script. See utils/__init__.py.'
+        self._data_transforms = data_transforms
 
     def prepare_data(self):
         pass

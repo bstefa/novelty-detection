@@ -1,11 +1,12 @@
 import torch
+import time
 import os
 import pytorch_lightning as pl
 
 from models import supported_models
 from datasets import supported_datamodules
 from modules.aae_base_module import AAEBaseModule
-from utils import tools, callbacks
+from utils import tools, callbacks, supported_preprocessing_transforms
 from functools import reduce
 
 import logging
@@ -19,11 +20,20 @@ def main():
     exp_params = config['experiment-parameters']
     data_params = config['data-parameters']
     module_params = config['module-parameters']
+
+    # Catch a few early common bugs
     assert ('AAE' in exp_params['model']), \
         'Only accepts AAE-type models for training, check your configuration file.'
+    if 'RegionExtractor' in data_params['preprocessing']:
+        assert (data_params['use_nre_collation'] is True)
+
+    # Set up preprocessing routine
+    preprocessing_transforms = supported_preprocessing_transforms[data_params['preprocessing']]
 
     # Initialize datamodule
-    datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
+    datamodule = supported_datamodules[exp_params['datamodule']](
+        data_transforms=preprocessing_transforms,
+        **data_params)
     datamodule.prepare_data()
     datamodule.setup('train')
 
@@ -74,4 +84,7 @@ def main():
 
 if __name__ == '__main__':
     DEFAULT_CONFIG_FILE = 'configs/aae/aae_simple_mnist.yaml'
+
+    start = time.time()
     main()
+    print(f'Training took {time.time() - start:.3f}s')

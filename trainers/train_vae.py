@@ -1,4 +1,5 @@
 import os
+import time
 import logging
 import torch
 import pytorch_lightning as pl
@@ -6,7 +7,7 @@ import pytorch_lightning as pl
 from models import supported_models
 from datasets import supported_datamodules
 from modules.vae_base_module import VAEBaseModule
-from utils import tools, callbacks
+from utils import tools, callbacks, supported_preprocessing_transforms
 # from torchsummary import summary
 
 
@@ -18,21 +19,29 @@ def main():
     exp_params = config['experiment-parameters']
     data_params = config['data-parameters']
     module_params = config['module-parameters']
+
+    # Catch few early, common bugs
     assert ('VAE' in exp_params['model']), \
         'Only accepts VAE-type models for training, check your configuration file.'
+    if 'RegionExtractor' in data_params['preprocessing']:
+        assert (data_params['use_nre_collation'] is True)
+    else:
+        assert (data_params['use_nre_collation'] is False)
+
+    # Set up preprocessing routine
+    preprocessing_transforms = supported_preprocessing_transforms[data_params['preprocessing']]
 
     # Initialize datamodule
     print('[INFO] Initializing datamodule..')
-    datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
+    datamodule = supported_datamodules[exp_params['datamodule']](
+        data_transforms=preprocessing_transforms,
+        **data_params)
     datamodule.prepare_data()
     datamodule.setup('train')
 
     # Initialize model
     print('[INFO] Initializing model..')
     model = supported_models[exp_params['model']](datamodule.data_shape, **module_params)
-
-    # View a summary of the model
-    # summary(model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')), datamodule.shape)
 
     # Initialize module
     print('[INFO] Initializing module..')
@@ -93,4 +102,7 @@ def main():
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
     DEFAULT_CONFIG_FILE = 'configs/vae/vae_simple_mnist.yaml'
+
+    start = time.time()
     main()
+    print(f'Training took {time.time() - start:.3f}s')

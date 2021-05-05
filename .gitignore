@@ -6,8 +6,10 @@ saved-models/
 logs/
 test_logs/
 
+
 # Scrap testing files
-utils/scripts/*.ipynb
+utils/scripts/*
+experiments/results/*
 
 *.ckpt
 *.swp

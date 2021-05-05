@@ -2,6 +2,7 @@ from typing import List, Callable, Union, Any, TypeVar, Tuple, Optional, Iterabl
 from matplotlib import figure
 import torch
 import numpy as np
+from torchvision.transforms import Compose
 
 Size = torch.Size
 DataLoader = TypeVar('torch.utils.data.DataLoader')

@@ -16,12 +16,12 @@ Assumes data is structured as follows:
 Author: Braden Stefanuk
 Created: Mar. 18, 2021
 """
+
 import torch
 import numpy as np
 
+from utils import tools
 from datasets.base import BaseDataModule
-from torchvision import transforms
-from utils import tools, preprocessing
 from utils.dtypes import *
 
 
@@ -74,6 +74,7 @@ class CuriosityDataModule(BaseDataModule):
     def __init__(
             self,
             root_data_path: str,
+            data_transforms: Compose,
             batch_size: int = 8,
             train_fraction: float = 0.85,
             **kwargs):
@@ -85,9 +86,9 @@ class CuriosityDataModule(BaseDataModule):
         self._root_data_path = root_data_path
         self._val_fraction = 1 - self._train_fraction
 
-        self._data_transforms = transforms.Compose([
-            preprocessing.CuriosityPreprocessingPipeline(),
-            transforms.ToTensor()])
+        assert (data_transforms is not None), \
+            'Data transforms must be defined in the training script. See utils/__init__.py.'
+        self._data_transforms = data_transforms
 
     def prepare_data(self):
         pass

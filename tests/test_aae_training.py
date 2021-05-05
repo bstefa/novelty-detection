@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 
 from pathlib import Path
 from functools import reduce
-from utils import tools, callbacks
+from utils import tools, callbacks, supported_preprocessing_transforms
 from modules.aae_base_module import AAEBaseModule
 from datasets import supported_datamodules
 from models import supported_models
@@ -46,7 +46,10 @@ def _test_training_pipeline(config):
     # Change log_dir for testing
     config['experiment-parameters']['log_dir'] = os.path.join('tests', 'test_logs')
 
+    preprocessing_transforms = supported_preprocessing_transforms[config['data-parameters']['preprocessing']]
+
     datamodule = supported_datamodules[config['experiment-parameters']['datamodule']](
+        data_transforms=preprocessing_transforms,
         **config['data-parameters'])
     datamodule.prepare_data()
     datamodule.setup('train')

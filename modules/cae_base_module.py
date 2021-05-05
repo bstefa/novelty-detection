@@ -33,7 +33,7 @@ class CAEBaseModule(pl.LightningModule):
 
     def training_step(self, batch, batch_nb):
 
-        batch_in, _ = self.handle_batch(batch)
+        batch_in, _ = self.handle_batch_shape(batch)
 
         batch_rc = self.forward(batch_in)
         loss = self.loss_function(batch_rc, batch_in)
@@ -43,7 +43,7 @@ class CAEBaseModule(pl.LightningModule):
 
     def validation_step(self, batch, batch_nb):
 
-        batch_in, _ = self.handle_batch(batch)
+        batch_in, _ = self.handle_batch_shape(batch)
 
         batch_rc = self.forward(batch_in)
         loss = self.loss_function(batch_rc, batch_in)
@@ -53,7 +53,7 @@ class CAEBaseModule(pl.LightningModule):
 
     def test_step(self, batch, batch_nb):
 
-        batch_in, batch_labels = batch
+        batch_in, batch_labels = self.handle_batch_shape(batch)
         batch_lt = self.model.encoder(batch_in)
         batch_rc = self.model.decoder(batch_lt)
         loss = self.loss_function(batch_rc, batch_in)
@@ -76,7 +76,7 @@ class CAEBaseModule(pl.LightningModule):
         }
 
     @staticmethod
-    def handle_batch(batch):
+    def handle_batch_shape(batch):
         '''
         Conducts an inplace operation to merge regions and batch size if neceassary
         '''

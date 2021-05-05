@@ -96,7 +96,7 @@ def _handle_image_logging(images: dict, pl_module) -> None:
     _log_images(compute, pl_module)
 
 
-class DataIntegrityCallback(pl.callbacks.base.Callback):
+class NREDataShapeHandlerCallback(pl.callbacks.base.Callback):
     """This callback manages the shapes for data with a region dimension"""
     def __init__(self):
         pass
@@ -105,7 +105,8 @@ class DataIntegrityCallback(pl.callbacks.base.Callback):
     def _handle_batch(batch):
         """Conducts an inplace operation to merge regions and batch size if necessary"""
         batch_in, _ = batch
-        assert any(len(batch_in.shape) == s for s in (4, 5)), f'Batch must have 4 or 5 dims, got {len(batch_in.shape)}'
+        assert any(len(batch_in.shape) == s for s in (4, 5)), \
+            f'Batch must have 4 or 5 dims, got {len(batch_in.shape)}'
         if len(batch_in.shape) == 5:
             batch_in = batch_in.view(-1, *batch_in.shape[2:])
         batch = (batch_in, _)
@@ -152,7 +153,7 @@ class AAEVisualization(pl.callbacks.base.Callback):
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if self._save_at_train_step == pl_module.global_step:
 
-            batch_in, _ = batch
+            batch_in, _ = pl_module.handle_batch_shape(batch)
             batch_in = batch_in.detach()
             image_shape = batch_in.shape
 
@@ -180,7 +181,8 @@ class VAEVisualization(pl.callbacks.base.Callback):
 
     def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if batch_idx == 1 and pl_module.logger.version is not None:
-            batch_in, _ = batch
+
+            batch_in, _ = pl_module.handle_batch_shape(batch)
             batch_in = batch_in.detach().to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 
             batch_rc = pl_module.model.generate(batch_in)

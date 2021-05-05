@@ -7,13 +7,14 @@ Uses:
     Module: CAEBaseModule
     Model: ReferenceCAE
     Dataset: LunarAnalogueDataGenerator
-    Configuration: cae_baseline_lunar_analogue.yaml
+    Configuration: cae_baseline_lunar_analogue_whole.yaml
 """
+import time
 import os
 import pytorch_lightning as pl
 import logging
 
-from utils import tools, callbacks
+from utils import tools, callbacks, supported_preprocessing_transforms
 from modules.cae_base_module import CAEBaseModule
 from datasets import supported_datamodules
 from models import supported_models
@@ -26,14 +27,22 @@ def main():
     exp_params = config['experiment-parameters']
     data_params = config['data-parameters']
     module_params = config['module-parameters']
+
+    # Catch a few early, common bugs
     assert ('CAE' in exp_params['model']), \
         'Only accepts CAE-type models for training, check your configuration file.'
+    if 'RegionExtractor' in data_params['preprocessing']:
+        assert (data_params['use_nre_collation'] is True)
+
+    # Set up preprocessing routine
+    preprocessing_transforms = supported_preprocessing_transforms[data_params['preprocessing']]
 
     # Initialize datamodule (see datasets/__init__.py for details)
-    datamodule = supported_datamodules[exp_params['datamodule']](**data_params)
+    datamodule = supported_datamodules[exp_params['datamodule']](
+        data_transforms=preprocessing_transforms,
+        **data_params)
     datamodule.prepare_data()
     datamodule.setup('train')
-    logging.debug(datamodule.data_shape)
 
     # Note that Pytorch uses the convention of shaping data as [..., C, H, W] as opposed
     # to [..., H, W, C]. When using a region extractor, the shape of the returned data may
@@ -90,5 +99,8 @@ def main():
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-    DEFAULT_CONFIG_FILE = 'configs/cae/cae_baseline_lunar_analogue.yaml'
+    DEFAULT_CONFIG_FILE = 'configs/cae/cae_baseline_lunar_analogue_whole.yaml'
+
+    start = time.time()
     main()
+    print(f'Training took {time.time() - start:.3f}s')

@@ -1,21 +1,34 @@
 from .preprocessing import *
-from .tools import unstandardize_batch
 
 from torchvision import transforms
 
+
+CuriosityPreprocessing = transforms.Compose([
+    CuriosityPreprocessingPipeline(),
+    transforms.ToTensor()
+])
+
 LunarAnalogueWholeImage = transforms.Compose([
-    LunarAnaloguePreprocessingPipeline()
+    LunarAnaloguePreprocessingPipeline(normalize='standard'),
+    transforms.ToTensor()
 ])
 
+# Because of the fancy labelling and collation, ToTensor cannot be applied to this
+# transform. Formatting and type casting of tensors is handled in the NovelRegion
 LunarAnalogueRegionExtractor = transforms.Compose([
-    LunarAnaloguePreprocessingPipeline(),
-    unstandardize_batch,
-    NovelRegionExtractorPipeline(),
-    transforms.Lambda(lambda regions: torch.stack([transforms.ToTensor()(region) for region in regions])),
-    transforms.Lambda(lambda x: x.to(dtype=torch.float32))
+    LunarAnaloguePreprocessingPipeline(normalize='zero_to_one'),
+    NovelRegionExtractorPipeline(return_tensor=True),
 ])
 
-supported_preprocessors = {
+# Novelty MNIST doesn't need to be transformed to a Tensor because the data
+# is already in Tensor format upon importing
+NoveltyMNISTPreproccesing = transforms.Compose([
+    NoveltyMNISTPreprocessingPipeline()
+])
+
+supported_preprocessing_transforms = {
+    'NoveltyMNISTPreprocessing': NoveltyMNISTPreproccesing,
+    'CuriosityPreprocessing': CuriosityPreprocessing,
     'LunarAnalogueWholeImage': LunarAnalogueWholeImage,
     'LunarAnalogueRegionExtractor': LunarAnalogueRegionExtractor
 }
