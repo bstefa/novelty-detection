@@ -55,8 +55,8 @@ class BaselineCAE(nn.Module):
             f'in_chans must be of type int, got {type(in_chans)}, and {type(height)}'
         assert any((in_chans == nb for nb in [1, 3, 6])), \
             f'Input image must be greyscale (1), RGB/YUV (3), or 6-channel multispectral, got {in_chans} channels'
-        assert any((height == nb for nb in [28, 64, 256])), \
-            f'Input image must have height == 28, 64, or 256, got {height}'
+        # assert any((height == nb for nb in [28, 64, 256])), \
+        #     f'Input image must have height == 28, 64, or 256, got {height}'
 
         # Encoding layers
         self.encoder = nn.Sequential(

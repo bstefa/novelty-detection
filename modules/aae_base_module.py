@@ -89,9 +89,10 @@ class AAEBaseModule(pl.LightningModule):
         loss = nn.MSELoss()(batch_rc, batch_in)
 
         # Calculate individual novelty scores
-        batch_scores = torch.empty(len(batch_labels), dtype=torch.float)
+        batch_scores = []#torch.empty(len(batch_labels), dtype=torch.float)
         for x_nb, (x_rc, x_in) in enumerate(zip(batch_rc, batch_in)):
-            batch_scores[x_nb] = nn.MSELoss()(x_rc, x_in)
+            # batch_scores[x_nb] = nn.MSELoss()(x_rc, x_in)
+            batch_scores.append(nn.MSELoss()(x_rc, x_in))
 
         return {
             'test_loss': loss,
