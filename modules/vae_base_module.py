@@ -66,7 +66,7 @@ class VAEBaseModule(pl.LightningModule):
             'labels': batch_labels
         }
 
-        return results
+        return results            
 
     @property
     def version(self):

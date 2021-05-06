@@ -55,7 +55,7 @@ def main():
         weights_summary=None,
         gpus=1,
         logger=logger,
-        max_epochs=1000,
+        max_epochs=1,
         check_val_every_n_epoch=1,
         callbacks=[
             pl.callbacks.EarlyStopping(
@@ -66,7 +66,8 @@ def main():
                 filename='{val_elbo_loss:.2f}-{epoch}',
                 save_last=True),
             pl.callbacks.GPUStatsMonitor(),
-            callbacks.VAEVisualization()
+            callbacks.VAEVisualization(),
+            callbacks.ReconsGenerator()
         ])
 
     # Find learning rate
@@ -88,7 +89,6 @@ def main():
     except TypeError as e:
         print(e)
         pass
-
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')

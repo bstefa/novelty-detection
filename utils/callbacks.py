@@ -187,11 +187,6 @@ class VAEVisualization(pl.callbacks.base.Callback):
 
             samples = pl_module.model.sample(num_samples=144)
 
-            print(torch.max(batch_in))
-            print(torch.min(batch_in))
-            print(torch.max(batch_rc))
-            print(torch.min(batch_rc))
-
             if trainer.datamodule.name == 'CuriosityDataModule':
                 batch_in = batch_in[:, [2, 0, 1]]
                 batch_rc = batch_rc[:, [2, 0, 1]]
@@ -229,3 +224,36 @@ class VAEVisualization(pl.callbacks.base.Callback):
                 f'epoch={pl_module.current_epoch}-step={pl_module.global_step}-samples.png'),
             normalize=True,
             nrow=12)
+
+class ReconsGenerator(pl.callbacks.base.Callback):
+    """
+    Generates and saves reconstructions of the training set after training
+    """
+
+    def __init__(self):
+        super(ReconsGenerator, self).__init__()
+        pass
+
+    def on_train_end(self, trainer, pl_module):
+        print('[INFO] Generating and saving reconstructions...')
+
+        recons_save_path = os.path.join(
+            pl_module.logger.save_dir,
+            pl_module.logger.name,
+            f'version_{pl_module.logger.version}',
+            'train_recons.pt'
+        )
+
+        reconstructions = []
+        for batch_in, _ in trainer.datamodule.train_dataloader():
+            pl_module.model.to('cpu') #Need to move to CPU because my GPU is running out of memory
+            x_hat = pl_module.model.generate(batch_in)
+            x_hat = x_hat.cpu()
+            reconstructions.append(x_hat)
+
+        reconstructions = torch.cat(reconstructions, dim=0)
+
+        assert reconstructions.shape[0] == trainer.datamodule.train_size, "Reconstructions not the same size as Training Set"
+        
+        torch.save(reconstructions, recons_save_path)
+        

@@ -1,4 +1,5 @@
 import torch
+import os
 
 class ReconsError():
     """
@@ -124,20 +125,14 @@ class BestLoss():
         min_recons_loss: Tenso
     """
 
-    def __init__(self, datamodule, model):
-        print("Testing wiht the Best Loss criterion")
+    def __init__(self, recons_path):
+        print("Testing with the Best Loss criterion")
 
-        self.model = model
+        assert os.path.isfile(recons_path) == True, "Reconstruction files does not exist!"
 
-        self.datamodule = datamodule
-        self.datamodule.setup("train")
+        self.reconstructions = torch.load(recons_path)
 
-        outputs = []
-
-        for image, data in datamodule.train_dataloader():
-            outputs.append(self.model.generate(image))
-
-        self.train_recons = torch.cat(outputs, dim=0)
+        print(self.reconstructions.shape)
         
     def __call__(self, **kwargs):
         return 0
