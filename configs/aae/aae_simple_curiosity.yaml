@@ -2,7 +2,7 @@
 experiment-parameters:
 
   # name (required, str): The name of the experiment. Typically best to align with the model being used.
-  model: 'SimpleAAE'
+  model: 'BaselineAAE'
 
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
@@ -47,4 +47,4 @@ module-parameters:
   weight_decay_coefficient: 0.01
 
   # latent_dims (required, int): Number of dimensions to use in the latent space of the VAE
-  latent_nodes: 12
+  latent_nodes: 10

@@ -6,7 +6,7 @@ experiment-parameters:
   # model (required, str):
   # The name of the model being used.
   # See models/__init__.py for supported models.
-  model: 'SimpleAAE'
+  model: 'BaselineAAE'
 
   # log_dir (required, str):
   # The directory to log the experiments to. Best to keep as 'logs'.
@@ -58,7 +58,7 @@ data-parameters:
   # batch_size (optional: int/null, default=8):
   # Number of samples to be used before a gradient-based optimization step.
   # Set to null for default.
-  batch_size: 64
+  batch_size: 32
 
   # use_custom_collate_fn (optional: bool/null, default=False):
   # Specifies if a custom collation function is to be used. This flag MUST be set
@@ -74,7 +74,7 @@ module-parameters:
 
   # latent_dims (required: int):
   # Number of dimensions to use in the latent space
-  latent_nodes: 10
+  latent_nodes: 256
 
   # learning_rate (required: float/null, default='auto'):
   # Scaling factor for gradient optimization step.
