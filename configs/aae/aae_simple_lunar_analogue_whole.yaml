@@ -2,7 +2,7 @@
 experiment-parameters:
 
   # name (required, str): The name of the experiment. Typically best to align with the model being used.
-  model: 'SimpleAAE'
+  model: 'BaselineAAE'
 
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
@@ -20,7 +20,7 @@ data-parameters:
 
   # root_data_path (required, str): Path to the common directory node immediately before training and testing branches.
   # ensure that this path matches the datamodule specified in the experiment-parameters.
-  root_data_path: '/home/brahste/Datasets/LunarAnalogue/nov-labelled'
+  root_data_path: '/home/brahste/Datasets/NoveltyLunarAnalogue'
 
   # glob_pattern_train (optional, str): Regular expression for globbing training and validation samples.
   glob_pattern_train: null
@@ -34,7 +34,7 @@ data-parameters:
 
   # batch_size (optional, int, default=8): Number of samples to be used in each iteration.
   # Set to null for default.
-  batch_size: 16
+  batch_size: 32
 
   # preprocessing (required, str): The preprocessing transforms applied to each image before being imported for
   # training, validation, or testing. Options are found in utils/__init__.py.
@@ -45,7 +45,7 @@ module-parameters:
 
   # latent_dims (required, int):
   # Number of dimensions to use in the latent space.
-  latent_nodes: 10
+  latent_nodes: 256
 
   # learning_rate (optional, float, default='auto'): Scaling factor for gradient descent step.
   # Set to 'auto' for default.

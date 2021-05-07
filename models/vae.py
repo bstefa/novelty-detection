@@ -85,16 +85,22 @@ class BaselineVAE(ParentVAE):
         super().__init__()
 
         in_chans = in_shape[0]
-        height, width = in_shape[1], in_shape[2]
+        height, width = int(in_shape[1]), int(in_shape[2])
         assert isinstance(in_chans, int) and isinstance(height, int), \
             f'in_chans must be of type int, got {type(in_chans)}, and {type(height)}'
         assert any((in_chans == nb for nb in [1, 3, 6])), \
             f'Input image must be greyscale (1), RGB/YUV (3), or 6-channel multispectral, got {in_chans} channels'
-        assert any((height == nb for nb in [28, 64, 256])), \
-            f'Input image must have height == 28, 64, or 256, got {height}'
+        assert any((height == nb for nb in [28, 64, 248])), \
+            f'Input image must have height == 28, 64, or 248, got {height}'
 
         self.encoder_output_height = tools.output_shape_conv2d2(
             height,
+            padding=[2]*7,
+            kernel_size=[5]*7,
+            stride=[1, 1, 2, 1, 1, 2, 1])
+
+        self.encoder_output_width = tools.output_shape_conv2d2(
+            width,
             padding=[2]*7,
             kernel_size=[5]*7,
             stride=[1, 1, 2, 1, 1, 2, 1])
@@ -111,17 +117,21 @@ class BaselineVAE(ParentVAE):
             nn.Conv2d(8, 3, kernel_size=5, padding=2),
         )
 
-        self.fc_mu = nn.Linear(3 * self.encoder_output_height**2, latent_nodes)
-        self.fc_var = nn.Linear(3 * self.encoder_output_height**2, latent_nodes)
+        # use 3x multiplier here because the encoder outputs 3 channels
+        self.fc_mu = nn.Linear(
+            3 * self.encoder_output_height*self.encoder_output_width, latent_nodes)
+        self.fc_var = nn.Linear(
+            3 * self.encoder_output_height*self.encoder_output_width, latent_nodes)
 
-        self.decoder_input = nn.Linear(latent_nodes, 3 * self.encoder_output_height**2)
+        self.decoder_input = nn.Linear(
+            latent_nodes, 3 * self.encoder_output_height*self.encoder_output_width)
 
         self.decoder = nn.Sequential(
             DecodingBlock(3, 8),
-            DecodingBlock(8, 16, stride=2, output_padding=1),
+            DecodingBlock(8, 16, stride=2, output_padding=(1, 0) if height == 248 else 1),
             DecodingBlock(16, 24),
             DecodingBlock(24, 48),
-            DecodingBlock(48, 48, stride=2, output_padding=1),
+            DecodingBlock(48, 48, stride=2, output_padding=(1, 0) if height == 248 else 1),
             DecodingBlock(48, 24),
             nn.Conv2d(24, in_chans, kernel_size=5, padding=2),
             nn.Tanh()  # Same size as input
@@ -132,7 +142,7 @@ class BaselineVAE(ParentVAE):
         Receives a variable sampled from q(z) and transforms it back to p(x|z)
         """
         x_hat = self.decoder_input(z)
-        x_hat = x_hat.view(-1, 3, self.encoder_output_height, self.encoder_output_height)
+        x_hat = x_hat.view(-1, 3, self.encoder_output_height, self.encoder_output_width)
         x_hat = self.decoder(x_hat)
         return x_hat
 

@@ -55,6 +55,20 @@ def save_object_to_version(obj, version: int, filename: str, log_dir='logs', mod
         raise Exception('No correct types were found, not saving...')
 
 
+class Restructure(torch.nn.Module):
+    def __init__(self, shape):
+        super().__init__()
+        self.shape = shape
+
+    def forward(self, z):
+        return z.view(*self.shape)
+
+
+class Flatten(torch.nn.Module):
+    def forward(self, x):
+        return x.view(x.shape[0], -1)
+
+
 class PathGlobber:
     def __init__(self, path: str):
         self.path = Path(path)

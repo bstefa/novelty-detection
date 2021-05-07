@@ -68,16 +68,16 @@ def _log_images(compute: dict, pl_module):
     if not os.path.exists(os.path.join(logger_save_path, 'images')):
         os.mkdir(os.path.join(logger_save_path, 'images'))
 
-    rint = torch.randint(0, len(compute['batch_in_01']), size=())
-    for key in compute:
-        torchvision.utils.save_image(
-            compute[key][rint],
-            os.path.join(
-                logger_save_path,
-                'images',
-                f'epoch={pl_module.current_epoch}-step={pl_module.global_step}-{key}.png'
-            )
-        )
+    index = torch.randint(0, len(compute['batch_in_01']), size=(6,))
+    grid = torch.cat((compute['batch_in_01'][index], compute['batch_rc_01'][index], compute['error_map'][index]))
+
+    torchvision.utils.save_image(
+        grid,
+        os.path.join(
+            logger_save_path,
+            'images',
+            f'epoch={pl_module.current_epoch}-step={pl_module.global_step}.png'),
+        nrow=6)
 
 
 def _handle_image_logging(images: dict, pl_module) -> None:
@@ -95,27 +95,27 @@ def _handle_image_logging(images: dict, pl_module) -> None:
     _log_to_tensorboard(images, compute, pl_module)
     _log_images(compute, pl_module)
 
-
-class NREDataShapeHandlerCallback(pl.callbacks.base.Callback):
-    """This callback manages the shapes for data with a region dimension"""
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def _handle_batch(batch):
-        """Conducts an inplace operation to merge regions and batch size if necessary"""
-        batch_in, _ = batch
-        assert any(len(batch_in.shape) == s for s in (4, 5)), \
-            f'Batch must have 4 or 5 dims, got {len(batch_in.shape)}'
-        if len(batch_in.shape) == 5:
-            batch_in = batch_in.view(-1, *batch_in.shape[2:])
-        batch = (batch_in, _)
-
-    def on_train_batch_start(self, trainer, pl_module, batch, batch_idx, dataloader_idx):
-        self._handle_batch(batch)
-
-    def on_validation_batch_start(self, trainer, pl_module, batch, batch_idx, dataloader_idx):
-        self._handle_batch(batch)
+################ MARKED FOR REMOVAL
+# class NREDataShapeHandlerCallback(pl.callbacks.base.Callback):
+#     """This callback manages the shapes for data with a region dimension"""
+#     def __init__(self):
+#         pass
+#
+#     @staticmethod
+#     def _handle_batch(batch):
+#         """Conducts an inplace operation to merge regions and batch size if necessary"""
+#         batch_in, _ = batch
+#         assert any(len(batch_in.shape) == s for s in (4, 5)), \
+#             f'Batch must have 4 or 5 dims, got {len(batch_in.shape)}'
+#         if len(batch_in.shape) == 5:
+#             batch_in = batch_in.view(-1, *batch_in.shape[2:])
+#         batch = (batch_in, _)
+#
+#     def on_train_batch_start(self, trainer, pl_module, batch, batch_idx, dataloader_idx):
+#         self._handle_batch(batch)
+#
+#     def on_validation_batch_start(self, trainer, pl_module, batch, batch_idx, dataloader_idx):
+#         self._handle_batch(batch)
 
 
 class VisualizationCallback(pl.callbacks.base.Callback):
@@ -128,7 +128,7 @@ class VisualizationCallback(pl.callbacks.base.Callback):
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if self._save_at_train_step == pl_module.global_step:
-            batch_in, _ = pl_module.handle_batch(batch)
+            batch_in, _ = pl_module.handle_batch_shape(batch)
             batch_in = batch_in.detach()
             batch_rc = pl_module.forward(batch_in.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
             if trainer.datamodule.name == 'CuriosityDataModule':
@@ -157,7 +157,6 @@ class AAEVisualization(pl.callbacks.base.Callback):
             batch_in = batch_in.detach()
             image_shape = batch_in.shape
 
-            batch_in = batch_in.view(image_shape[0], -1)
             batch_lt = pl_module.encoder(batch_in.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
             batch_rc = pl_module.decoder(batch_lt)
 
@@ -187,7 +186,7 @@ class VAEVisualization(pl.callbacks.base.Callback):
 
             batch_rc = pl_module.model.generate(batch_in)
 
-            samples = pl_module.model.sample(num_samples=144)
+            samples = pl_module.model.sample(num_samples=16)
 
             if trainer.datamodule.name == 'CuriosityDataModule':
                 batch_in = batch_in[:, [2, 0, 1]]
@@ -225,4 +224,4 @@ class VAEVisualization(pl.callbacks.base.Callback):
                 logger_save_path,
                 f'epoch={pl_module.current_epoch}-step={pl_module.global_step}-samples.png'),
             normalize=True,
-            nrow=12)
+            nrow=4)

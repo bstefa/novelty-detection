@@ -6,7 +6,7 @@ experiment-parameters:
   # model (required, str):
   # The name of the model being used.
   # See models/__init__.py for supported models.
-  model: 'BaselineCAE'
+  model: 'BaselineVAE'
 
   # log_dir (required, str):
   # The directory to log the experiments to. Best to keep as 'logs'.
@@ -58,13 +58,17 @@ data-parameters:
   # batch_size (optional: int/null, default=8):
   # Number of samples to be used before a gradient-based optimization step.
   # Set to null for default.
-  batch_size: 32
+  batch_size: 16
 
 
 # ----------------------------------------------
 # module-parameters: Contains hyperparameters used when running optimization in training modules.
 # ----------------------------------------------
 module-parameters:
+
+  # latent_dims (required, int):
+  # Number of dimensions to use in the latent space of the VAE
+  latent_nodes: 2048
 
   # learning_rate (required: float/null, default='auto'):
   # Scaling factor for gradient optimization step.
@@ -75,7 +79,3 @@ module-parameters:
   # Scaling factor for loss regularization term.
   # Omit or set to null for default.
   weight_decay_coefficient: 0.01
-
-
-
-

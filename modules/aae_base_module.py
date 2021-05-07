@@ -48,7 +48,6 @@ class AAEBaseModule(pl.LightningModule):
 
         # Manage data layout
         batch_in, _ = self.handle_batch_shape(batch)
-        batch_in = batch_in.view(batch_in.shape[0], -1)  # Keep batch dimension, but flatten all others
 
         # Reconstruction phase
         # ------
@@ -72,7 +71,6 @@ class AAEBaseModule(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         # Validate with reconstruction loss
         batch_in, _ = self.handle_batch_shape(batch)
-        batch_in = batch_in.view(batch_in.shape[0], -1)
 
         reconstruction_loss = self.reconstruction_loss(batch_in)
         self.log('val_r_loss', reconstruction_loss, prog_bar=True)
@@ -82,16 +80,14 @@ class AAEBaseModule(pl.LightningModule):
 
         batch_in, batch_labels = self.handle_batch_shape(batch)
         image_shape = batch_in.shape
-        batch_in = batch_in.view(batch_in.shape[0], -1)
 
         batch_lt = self.encoder(batch_in)
         batch_rc = self.decoder(batch_lt)
         loss = nn.MSELoss()(batch_rc, batch_in)
 
         # Calculate individual novelty scores
-        batch_scores = []#torch.empty(len(batch_labels), dtype=torch.float)
+        batch_scores = []
         for x_nb, (x_rc, x_in) in enumerate(zip(batch_rc, batch_in)):
-            # batch_scores[x_nb] = nn.MSELoss()(x_rc, x_in)
             batch_scores.append(nn.MSELoss()(x_rc, x_in))
 
         return {
@@ -105,11 +101,11 @@ class AAEBaseModule(pl.LightningModule):
             }
         }
 
-    @staticmethod
-    def handle_batch_shape(batch):
-        '''
+    # @staticmethod
+    def handle_batch_shape(self, batch):
+        """
         Conducts an inplace operation to merge regions and batch size if NRE is being used.
-        '''
+        """
         batch_in, _ = batch
         assert any(len(batch_in.shape) == s for s in (4, 5)), f'Batch must have 4 or 5 dims, got {len(batch_in.shape)}'
         if len(batch_in.shape) == 5:
