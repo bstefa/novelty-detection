@@ -125,31 +125,42 @@ class BestLoss():
         min_recons_loss: Tensor
     """
 
-    def __init__(self, train_recons_path):
+    def __init__(self, train_recons_path, batch_size):
         print("Testing with the Best Loss criterion")
 
         assert os.path.isfile(train_recons_path) == True, "Reconstruction files does not exist!"
 
         self.train_recons = torch.load(train_recons_path)
         self.train_recons = torch.flatten(self.train_recons, start_dim=1)
-
-        print(self.train_recons.shape)
+        self.batch_size = batch_size
+        self.train_recons_dataloader = torch.utils.data.DataLoader(
+            self.train_recons,
+            batch_size=self.batch_size,
+            drop_last=False,
+            num_workers=8)
 
     def __call__(self, **kwargs):
+
         test_recons = kwargs['recons']
         test_recons = torch.flatten(test_recons, start_dim=1)
 
         n = test_recons.size(0)
-        m = self.train_recons.size(0)
         d = test_recons.size(1)
+        m = self.batch_size
 
         test_recons = test_recons.unsqueeze(1).expand(n, m, d)
-        self.train_recons = self.train_recons.unsqueeze(0).expand(n, m, d)
 
-        distances = torch.pow(test_recons - self.train_recons, 2).sum(2)
-        print(distances.shape)
-        scores = torch.min(distances, dim=1)
-        print(scores.shape)
-        input()
+        for batch_in, batch in enumerate(self.train_recons_dataloader):
+            
+            batch = batch.unsqueeze(0).expand(n, m, d)
+
+            distances = torch.pow(test_recons - batch, 2).sum(2)
+            distances = torch.min(distances, dim=1).values
+
+            if batch_in == 0:
+                scores = distances
+            else:
+                scores = torch.minimum(scores, distances)
+                
         return scores
         
