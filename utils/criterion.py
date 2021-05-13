@@ -122,18 +122,34 @@ class BestLoss():
         reconstructions from the training set
         reconstruction from the test image
     OUTPUTS:
-        min_recons_loss: Tenso
+        min_recons_loss: Tensor
     """
 
-    def __init__(self, recons_path):
+    def __init__(self, train_recons_path):
         print("Testing with the Best Loss criterion")
 
-        assert os.path.isfile(recons_path) == True, "Reconstruction files does not exist!"
+        assert os.path.isfile(train_recons_path) == True, "Reconstruction files does not exist!"
 
-        self.reconstructions = torch.load(recons_path)
+        self.train_recons = torch.load(train_recons_path)
+        self.train_recons = torch.flatten(self.train_recons, start_dim=1)
 
-        print(self.reconstructions.shape)
-        
+        print(self.train_recons.shape)
+
     def __call__(self, **kwargs):
-        return 0
+        test_recons = kwargs['recons']
+        test_recons = torch.flatten(test_recons, start_dim=1)
+
+        n = test_recons.size(0)
+        m = self.train_recons.size(0)
+        d = test_recons.size(1)
+
+        test_recons = test_recons.unsqueeze(1).expand(n, m, d)
+        self.train_recons = self.train_recons.unsqueeze(0).expand(n, m, d)
+
+        distances = torch.pow(test_recons - self.train_recons, 2).sum(2)
+        print(distances.shape)
+        scores = torch.min(distances, dim=1)
+        print(scores.shape)
+        input()
+        return scores
         
