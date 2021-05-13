@@ -1,5 +1,5 @@
 import os
-import logging
+# import logging
 import torch
 import pytorch_lightning as pl
 
@@ -55,7 +55,7 @@ def main():
         weights_summary=None,
         gpus=1,
         logger=logger,
-        max_epochs=1,
+        max_epochs=1000,
         check_val_every_n_epoch=1,
         callbacks=[
             pl.callbacks.EarlyStopping(
@@ -91,6 +91,6 @@ def main():
         pass
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+    # logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
     DEFAULT_CONFIG_FILE = 'configs/vae/vae_simple_mnist.yaml'
     main()

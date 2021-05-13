@@ -11,7 +11,7 @@ import torchvision
 import pytorch_lightning as pl
 import torchvision.utils as vutils
 import logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+# logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 
 from utils import tools
 

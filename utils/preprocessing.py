@@ -6,7 +6,7 @@ from sklearn.cluster import KMeans
 from torchvision import transforms
 
 import logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class NovelRegionExtractorPipeline:
