@@ -55,16 +55,21 @@ class VAEBaseModule(pl.LightningModule):
 
     def test_step(self, batch, batch_nb):
         batch_in, batch_labels = self.handle_batch_shape(batch)
-        recons = self.model.generate(batch_in)
+        batch_rc = self.model.generate(batch_in)
 
-        mse_loss = torch.nn.MSELoss(reduction='none')
-        recons_error = mse_loss(recons, batch_in)
-        mse_loss_sum = torch.sum(recons_error, dim=(1, 2, 3))
+        # mse_loss = torch.nn.MSELoss(reduction='none')
+        # recons_error = mse_loss(batch_rc, batch_in)
+        # mse_loss_sum = torch.sum(recons_error, dim=(1, 2, 3))
+
+        # Calculate individual novelty scores
+        batch_scores = []
+        for x_nb, (x_rc, x_in) in enumerate(zip(batch_rc, batch_in)):
+            batch_scores.append(nn.MSELoss()(x_rc, x_in))
 
         results = {
-            'scores': mse_loss_sum,
+            'scores': batch_scores,
             'labels': batch_labels,
-            'recons': recons
+            'recons': batch_rc
         }
         return results
 

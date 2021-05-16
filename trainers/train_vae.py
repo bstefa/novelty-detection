@@ -25,8 +25,6 @@ def main():
         'Only accepts VAE-type models for training, check your configuration file.'
     if 'RegionExtractor' in data_params['preprocessing']:
         assert (data_params['use_nre_collation'] is True)
-    else:
-        assert (data_params['use_nre_collation'] is False)
 
     # Set up preprocessing routine
     preprocessing_transforms = supported_preprocessing_transforms[data_params['preprocessing']]

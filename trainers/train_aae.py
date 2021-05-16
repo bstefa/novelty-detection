@@ -39,7 +39,7 @@ def main():
 
     # Initialize model with number of nodes equal to number of input pixels
     model = supported_models[exp_params['model']](
-        in_nodes=reduce(lambda x, y: x*y, datamodule.data_shape),
+        datamodule.data_shape,
         latent_nodes=module_params['latent_nodes'])
 
     # Initialize module

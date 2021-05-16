@@ -59,9 +59,10 @@ class CAEBaseModule(pl.LightningModule):
         loss = self.loss_function(batch_rc, batch_in)
 
         # Calculate individual novelty scores
-        batch_scores = torch.empty(len(batch_labels), dtype=torch.float)
+        batch_scores = []#torch.empty(len(batch_labels), dtype=torch.float)
         for x_nb, (x_rc, x_in) in enumerate(zip(batch_rc, batch_in)):
-            batch_scores[x_nb] = self.loss_function(x_rc, x_in)
+            # batch_scores[x_nb] = self.loss_function(x_rc, x_in)
+            batch_scores.append(self.loss_function(x_rc, x_in))
 
         self.log('test_loss', loss)
         return {

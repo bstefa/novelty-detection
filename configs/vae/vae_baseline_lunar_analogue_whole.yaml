@@ -1,0 +1,81 @@
+# ----------------------------------------------
+# experiment-parameters: Contains experiment-level information.
+# ----------------------------------------------
+experiment-parameters:
+
+  # model (required, str):
+  # The name of the model being used.
+  # See models/__init__.py for supported models.
+  model: 'BaselineVAE'
+
+  # log_dir (required, str):
+  # The directory to log the experiments to. Best to keep as 'logs'.
+  log_dir: 'logs'
+
+  # datamodule (required, str):
+  # The datamodule (or datagenerator) to use for your experiment.
+  # See datasets/__init__.py for supported datamodules.
+  datamodule: 'LunarAnalogueDataModule'
+
+  # patience (optional: int/null, default=5)
+  # Determines when to conduct early stopping based on lowest validation loss.
+  # Set to null for default.
+  patience: null
+
+
+# ----------------------------------------------
+# data-parameters: Contains information used for preparing and loading the data.
+# ----------------------------------------------
+data-parameters:
+
+  # root_data_path (required, str):
+  # Path to the common directory node immediately before training and testing branches.
+  # This parameter will likely need to be configured by the user.
+  root_data_path: '/home/brahste/Datasets/NoveltyLunarAnalogue'
+
+  # preprocessing (required, str):
+  # The preprocessing transforms applied to each image before being imported for
+  # training, validation, or testing.
+  # See utils/__init__.py for supported preprocessing transforms.
+  preprocessing: 'LunarAnalogueWholeImage'
+
+  # glob_pattern_train (optional: str/null, default='trainval/**/*.jpeg'):
+  # The regular expression, starting from the root_data_path, that would glob all
+  # training & validation samples.
+  # Omit or set to null for default.
+  glob_pattern_train: null
+
+  # glob_pattern_test (optional: str/null, default='test/**/*.jpeg'):
+  # Regular expression for globbing test samples.
+  # Omit or set to null for default.
+  glob_pattern_test: null
+
+  # train_fraction (optional: float/null, default=0.8):
+  # Fraction of training samples to be used for training, the rest will be used for validation.
+  # Omit or set to null for default.
+  train_fraction: null
+
+  # batch_size (optional: int/null, default=8):
+  # Number of samples to be used before a gradient-based optimization step.
+  # Set to null for default.
+  batch_size: 16
+
+
+# ----------------------------------------------
+# module-parameters: Contains hyperparameters used when running optimization in training modules.
+# ----------------------------------------------
+module-parameters:
+
+  # latent_dims (required, int):
+  # Number of dimensions to use in the latent space of the VAE
+  latent_nodes: 2048
+
+  # learning_rate (required: float/null, default='auto'):
+  # Scaling factor for gradient optimization step.
+  # Set to null for default.
+  learning_rate: 0.0005
+
+  # weight_decay_coefficient (optional: float/null, default=0.01):
+  # Scaling factor for loss regularization term.
+  # Omit or set to null for default.
+  weight_decay_coefficient: 0.01

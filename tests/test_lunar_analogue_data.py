@@ -25,32 +25,6 @@ class TestLunarAnalogueData(unittest.TestCase):
 
         self.assertTrue(-1e-3 < image.mean() < 1e-3)
 
-    # def test_region_extraction_preprocessing(self):
-    #
-    #     preprocessing_transforms = supported_preprocessing_transforms['LunarAnalogueRegionExtractor']
-    #
-    #     ds = LunarAnalogueDataset(
-    #         root_data_path='/home/brahste/Datasets/NoveltyLunarAnalogue',
-    #         train=False,
-    #         data_transforms=preprocessing_transforms,
-    #         glob_pattern='test/**/*.jpeg')
-    #     image, label = ds[int(torch.randint(len(ds), (1,)))]
-    #
-    #     self.assertTrue(isinstance(image, torch.Tensor))
-    #     self.assertEqual(image.shape[0], 16)  # 16 is the expected number of region proposals
-    #     self.assertEqual(image.shape[1], 3)  # Ensure 3-channel image
-    #
-    #     for k, v in label.items():
-    #         self.assertIn(k, ['filepath', 'gt_bbox', 'cr_bboxes'])
-    #
-    #     self.assertTrue(path.exists(label['filepath'][torch.randint(len(image), (1,))][0]))
-    #
-    #     self.assertTrue(isinstance(label['gt_bbox'], np.ndarray))
-    #     self.assertEqual(label['gt_bbox'].shape, (4,))
-    #
-    #     self.assertTrue(isinstance(label['cr_bboxes'], np.ndarray))
-    #     self.assertEqual(label['cr_bboxes'].shape, (16, 4))
-
     def test_region_extraction_dataloading(self):
 
         config = tools.load_config('configs/cae/cae_baseline_lunar_analogue_region.yaml', silent=True)

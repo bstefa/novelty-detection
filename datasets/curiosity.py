@@ -16,7 +16,6 @@ Assumes data is structured as follows:
 Author: Braden Stefanuk
 Created: Mar. 18, 2021
 """
-
 import torch
 import numpy as np
 

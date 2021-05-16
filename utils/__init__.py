@@ -17,7 +17,7 @@ LunarAnalogueWholeImage = transforms.Compose([
 # transform. Formatting and type casting of tensors is handled in the NovelRegion
 LunarAnalogueRegionExtractor = transforms.Compose([
     LunarAnaloguePreprocessingPipeline(normalize='zero_to_one'),
-    NovelRegionExtractorPipeline(return_tensor=True),
+    RegionProposalSS(return_tensor=True),
 ])
 
 # Novelty MNIST doesn't need to be transformed to a Tensor because the data

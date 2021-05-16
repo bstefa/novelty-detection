@@ -24,7 +24,7 @@ data-parameters:
 
   # train_fraction (optional, float, default=0.8): Fraction of training samples to be used for
   # training, the rest will be used for validation. Set to null for default.
-  train_fraction: 0.9
+  train_fraction: null
 
   # batch_size (optional, int, default=8): Number of samples to be used in each iteration.
   # Set to null for default.
@@ -47,4 +47,4 @@ module-parameters:
   weight_decay_coefficient: 0.01
 
   # latent_dims (required, int): Number of dimensions to use in the latent space of the VAE
-  latent_nodes: 10
+  latent_nodes: 256
