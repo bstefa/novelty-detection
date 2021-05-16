@@ -10,7 +10,79 @@ from sklearn.cluster import KMeans
 # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-class NovelRegionExtractorPipeline:
+class RegionProposalBING:
+    """
+    This class uses Binarized normed gradients (BING) to compute unsupervised region proposals.
+    Original literature can be found at: https://mmcheng.net/bing/
+    """
+    def __init__(
+            self,
+            n_regions: int = 16,
+            region_shape: tuple = (64, 64, 3),
+            return_tensor: bool = True,
+            view_region_proposals: bool = False):
+        super().__init__()
+
+        self.n_regions = n_regions
+        self.region_shape = region_shape
+        self._return_tensor = return_tensor
+        self._view_region_proposals = view_region_proposals
+
+        self._saliency_obj = cv.saliency.ObjectnessBING_create()
+        self._saliency_obj.setTrainingPath('models/_bing_trained_models')
+        self._kmeans = KMeans(n_clusters=n_regions)
+
+    def __call__(self, image: np.ndarray):
+        # TODO: Set up asserts to ensure data is general correct upon importing
+        
+        # Compute saliency boxes
+        success, raw_rects = self._saliency_obj.computeSaliency(image)
+        rects = np.empty((len(raw_rects), 4))
+        areas = np.empty(len(raw_rects))
+        whaspects = np.empty(len(raw_rects))
+        
+        for i, (x1, y1, x2, y2) in enumerate(raw_rects.reshape(-1, 4)):
+            w, h = x2 - x1, y2 - y1
+            rects[i] = [x1, y1, w, h]
+            areas[i] = w * h
+            whaspects[i] = w / h
+
+        area_low, area_high = np.quantile(areas, [0.9, 1.00])
+        whaspect_low, whaspect_high = np.quantile(whaspects, [0., 0.7])
+        hwaspect_low, hwaspect_high = np.quantile(1/whaspects, [0., 0.7])
+        
+        keep_rects = rects[
+            (areas > area_low) & (areas < area_high) &
+            (whaspects > whaspect_low) & (whaspects < whaspect_high) &
+            ((1/whaspects) > hwaspect_low) & ((1/whaspects) < hwaspect_high)
+            ]
+                
+        self._kmeans.fit(keep_rects)
+        warped_crops = np.empty((self.n_regions, *self.region_shape))
+        crop_bboxes = np.empty((self.n_regions, 4))
+
+        for i, (x, y, w, h) in enumerate(self._kmeans.cluster_centers_):
+            x, y, w, h = int(x), int(y), int(w), int(h)
+            crop = image[y:y+h, x:x+w]
+            warped_crop = cv.resize(crop, (self.region_shape[0], self.region_shape[1]), interpolation=cv.INTER_CUBIC)
+
+            crop_bboxes[i] = np.array([x, y, w, h])
+            warped_crops[i] = warped_crop
+
+        if self._view_region_proposals:
+            fig, ax = plt.subplots()
+            ax.imshow(image)
+            for crop in crop_bboxes:
+                rect = patches.Rectangle((crop[0], crop[1]), crop[2], crop[3], facecolor='none', edgecolor='r')
+                ax.add_patch(rect)
+            plt.show()
+
+        if self._return_tensor:
+            warped_crops = torch.tensor(warped_crops).permute(0, 3, 1, 2).to(dtype=torch.float32)
+        return warped_crops, crop_bboxes
+
+
+class RegionProposalSS:
     """
     Conceptually this class would be called after another preprocessing
     pipeline is applied first, such as LunarAnaloguePreprocessingPipeline
