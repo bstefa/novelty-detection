@@ -118,7 +118,7 @@ class NoveltyMNISTDataModule(BaseDataModule):
         return torch.utils.data.DataLoader(
             self._test_set,
             batch_size=self._batch_size,
-            drop_last=True,
+            drop_last=False,
             num_workers=8)
 
     def split(self, train: bool) -> Tuple[np.ndarray, np.ndarray]:

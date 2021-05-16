@@ -12,6 +12,9 @@ from pprint import pprint
 from utils.dtypes import *
 from utils import dtypes
 
+import matplotlib.legend as mlegend
+from matplotlib.patches import Rectangle
+
 
 def load_config(default_config: str, silent=False):
     """

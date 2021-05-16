@@ -10,7 +10,7 @@ test_logs/
 # Scrap testing files
 utils/scripts/*
 utils/_scripts/*
-experiments/results/*
+experiments/results*
 
 *.ckpt
 *.swp

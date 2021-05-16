@@ -10,7 +10,7 @@ from utils import tools, callbacks, supported_preprocessing_transforms
 from functools import reduce
 
 import logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 
 def main():
@@ -83,6 +83,7 @@ def main():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
     DEFAULT_CONFIG_FILE = 'configs/aae/aae_simple_mnist.yaml'
 
     start = time.time()
