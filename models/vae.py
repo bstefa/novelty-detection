@@ -78,6 +78,12 @@ class ParentVAE(nn.Module):
         x_hat, _, _ = self.forward(x)
         return x_hat
 
+    def generate_for_testing(self, x: Tensor, **kwargs) -> Tensor:
+        mu, log_var = self.encode(x)
+        z = self.reparameterize(mu, log_var)
+        x_hat = self.decode(z)
+        return x_hat, mu, log_var, z
+
 
 class BaselineVAE(ParentVAE):
 
