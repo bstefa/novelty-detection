@@ -20,6 +20,11 @@ LunarAnalogueRegionExtractor = transforms.Compose([
     RegionProposalSS(return_tensor=True),
 ])
 
+LunarAnalogueRegionProposalBING = transforms.Compose([
+    LunarAnaloguePreprocessingPipeline(normalize='zero_to_one'),
+    RegionProposalBING(return_tensor=True),
+])
+
 # Novelty MNIST doesn't need to be transformed to a Tensor because the data
 # is already in Tensor format upon importing
 NoveltyMNISTPreproccesing = transforms.Compose([
@@ -30,5 +35,7 @@ supported_preprocessing_transforms = {
     'NoveltyMNISTPreprocessing': NoveltyMNISTPreproccesing,
     'CuriosityPreprocessing': CuriosityPreprocessing,
     'LunarAnalogueWholeImage': LunarAnalogueWholeImage,
-    'LunarAnalogueRegionExtractor': LunarAnalogueRegionExtractor
+    'LunarAnalogueRegionExtractor': LunarAnalogueRegionExtractor,
+    'LunarAnalogueRegionProposalSS': LunarAnalogueRegionExtractor,
+    'LunarAnalogueRegionProposalBING': LunarAnalogueRegionProposalBING
 }
