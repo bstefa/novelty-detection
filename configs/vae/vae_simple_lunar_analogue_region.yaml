@@ -2,7 +2,7 @@
 experiment-parameters:
 
   # name (required, str): The name of the experiment. Typically best to align with the model being used.
-  model: 'SimpleVAE'
+  model: 'BaselineVAE'
 
   # log_dir (required, str): The directory to log the experiments to. Best to keep as 'logs'.
   log_dir: 'logs'
@@ -28,11 +28,11 @@ data-parameters:
 
   # batch_size (optional, int, default=8): Number of samples to be used in each iteration.
   # Set to null for default.
-  batch_size: 128
+  batch_size: 8 
 
   # preprocessing (required, str): The preprocessing transforms applied to each image before being imported for
   # training, validation, or testing. Options are found in utils/__init__.py.
-  preprocessing: 'LunarAnalogueRegionExtractor'
+  preprocessing: 'LunarAnalogueRegionProposalBING'
 
   # use_nre_collation (required, bool)
   # Specifies whether fancy collation is used for NRE dataloading. MUST be true when 
@@ -44,11 +44,11 @@ module-parameters:
 
   # learning_rate (optional, float, default='auto'): Scaling factor for gradient descent step.
   # Set to null for default.
-  learning_rate: null 
+  learning_rate: 0.0005 
 
   # weight_decay_coefficient (optional, float, default=0.01): Scaling factor for loss regularization term.
   # Set to null for default.
   weight_decay_coefficient: 0.01
 
   # latent_dims (required, int): Number of dimensions to use in the latent space of the VAE
-  latent_nodes: 48 
+  latent_nodes: 2048 

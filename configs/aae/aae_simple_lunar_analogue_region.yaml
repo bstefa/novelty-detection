@@ -37,7 +37,7 @@ data-parameters:
   # The preprocessing transforms applied to each image before being imported for
   # training, validation, or testing.
   # See utils/__init__.py for supported preprocessing transforms.
-  preprocessing: 'LunarAnalogueRegionExtractor'
+  preprocessing: 'LunarAnalogueRegionProposalBING'
 
   # glob_pattern_train (optional: str/null, default='trainval/**/*.jpeg'):
   # The regular expression, starting from the root_data_path, that would glob all
@@ -74,7 +74,7 @@ module-parameters:
 
   # latent_dims (required: int):
   # Number of dimensions to use in the latent space
-  latent_nodes: 256
+  latent_nodes: 32 
 
   # learning_rate (required: float/null, default='auto'):
   # Scaling factor for gradient optimization step.
