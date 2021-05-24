@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
+from pathlib import Path
 from sklearn.cluster import KMeans
 
 # import logging
@@ -28,15 +29,20 @@ class RegionProposalBING:
         self._return_tensor = return_tensor
         self._view_region_proposals = view_region_proposals
 
+        wkdir = Path.cwd()
+        assert('/novelty-detection/' in str(wkdir), 'Working in wrong directory.')
+        while wkdir.name != 'novelty-detection':
+            wkdir = wkdir.parent
+
         self._saliency_obj = cv.saliency.ObjectnessBING_create()
-        self._saliency_obj.setTrainingPath('models/_bing_trained_models')
+        self._saliency_obj.setTrainingPath(str(wkdir/'models'/'_bing_trained_models'))
         self._kmeans = KMeans(n_clusters=n_regions)
 
     def __call__(self, image: np.ndarray):
         # TODO: Set up asserts to ensure data is general correct upon importing
-        
         # Compute saliency boxes
         success, raw_rects = self._saliency_obj.computeSaliency(image)
+
         rects = np.empty((len(raw_rects), 4))
         areas = np.empty(len(raw_rects))
         whaspects = np.empty(len(raw_rects))

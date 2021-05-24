@@ -11,7 +11,7 @@ from utils import tools, supported_preprocessing_transforms
 from utils.dtypes import *
 
 
-def load_modules(paths_to_archived_models: List[Path]) -> dict:
+def load_modules(paths_to_archived_models: List[Path]):
     # Load the checkpoints for all the training modules and save them in a dictionary
     module_catalog = {}
 
