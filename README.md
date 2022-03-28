@@ -14,4 +14,4 @@ Training is conducted with **trainers**, scripts that synthesize the various com
 $ python trainers/train_cae_baseline.py config/cae/cae_baseline_mnist.yaml
 ```
 
-For more details about the results and outcome of the research conducted herein
+For more details about the nature and outcomes of the research conducted herein feel free to checkout my thesis [here](https://spectrum.library.concordia.ca/id/eprint/988786/)
