@@ -39,5 +39,3 @@ Python's package manager `pip` should now be available in your local repository,
 $ pip --version
 pip 22.0.2 from /home/braden/dev/research/novelty-detection/lib/python3.10/site-packages/pip (python 3.10)
 ```
-
-
