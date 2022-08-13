@@ -6,12 +6,24 @@ saved-models/
 logs/
 test_logs/
 
+# venv folders
+bin/
+etc/
+share/
+lib/
+pyvenv.cfg
 
 # Scrap testing files
 utils/scripts/*
 utils/_scripts/*
 experiments/results*
 
+# Image outputs
+*.pdf
+*.png
+*.jpeg
+
+# Misc
 *.ckpt
 *.swp
 *.orig
