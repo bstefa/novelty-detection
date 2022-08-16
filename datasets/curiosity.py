@@ -29,14 +29,15 @@ class CuriosityDataset(torch.utils.data.Dataset):
             self,
             root_data_path: str,
             train: bool = True,
-            data_transforms=None):
+            data_transforms=None,
+            novel_class_specifier='test_novel/all/'):
         super().__init__()
 
         if train:
             self._list_of_image_paths = tools.PathGlobber(root_data_path).glob('trainval/**/*.npy')
         else:
             self._list_of_image_paths = tools.PathGlobber(root_data_path).multiglob(
-                (f'test/{p}*.npy' for p in ['test_typical/', 'test_novel/all/']))
+                (f'test/{p}*.npy' for p in ['test_typical/', novel_class_specifier]))
         self._train = train
         self._data_transforms = data_transforms
 

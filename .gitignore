@@ -12,6 +12,10 @@ utils/scripts/*
 utils/_scripts/*
 experiments/results*
 
+# Images
+*.png
+*.pdf
+
 *.ckpt
 *.swp
 *.orig
