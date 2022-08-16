@@ -13,8 +13,8 @@ utils/_scripts/*
 experiments/results*
 
 # Images
-*.png
-*.pdf
+**/*.png
+**/*.pdf
 
 *.ckpt
 *.swp
