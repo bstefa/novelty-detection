@@ -1,0 +1,7 @@
+Training time (s),Epochs,Path to log
+720,32,/home/brahste/Projects/novelty+AC0-detection/logs/CuriosityDataModule/BaselineAAE/archive+AF8-v1+AF8-2021+AC0-05+AC0-07
+143.902,35,/home/brahste/Projects/novelty+AC0-detection/logs/CuriosityDataModule/BaselineAAE/archive+AF8-v2+AF8-2021+AC0-05+AC0-08
+1839.033,105,/home/brahste/Projects/novelty+AC0-detection/logs/CuriosityDataModule/SimpleAAE/archive+AF8-v3+AF8-2021+AC0-05+AC0-19
+7372.622,22,/home/brahste/Projects/novelty+AC0-detection/logs/LunarAnalogueDataModule/BaselineCAE/archive+AF8-bing1+AF8-2021+AC0-05+AC0-19
+14906.616,59,/home/brahste/Projects/novelty+AC0-detection/logs/LunarAnalogueDataModule/BaselineAAE/archive+AF8-bing1+AF8-2021+AC0-05+AC0-19
+5182.542,18,/home/brahste/Projects/novelty+AC0-detection/logs/LunarAnalogueDataModule/BaselineVAE/archive+AF8-bing1+AF8-2021+AC0-05+AC0-20
