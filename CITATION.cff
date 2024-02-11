@@ -2,7 +2,7 @@
 # Visit https://bit.ly/cffinit to generate yours today!
 
 cff-version: 1.2.0
-title: Visual Novelty Detection for Lunar Rovers
+title: Visual Novelty Detection Framework for Lunar Rovers
 message: >-
   If you use this software, please cite it using the
   metadata from this file.

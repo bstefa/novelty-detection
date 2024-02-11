@@ -1,8 +1,22 @@
-# Novelty Detection
+# Visual Novelty Detection Framework
 
-This repository contains the research-level code used to complete my MASc: Image-based Novelty Detection for Lunar Exploration.
+![image-20240211115342993](figures/coverphoto1.png)
 
-> For more details about the nature and outcomes of the research conducted herein feel free to checkout my thesis [here](https://spectrum.library.concordia.ca/id/eprint/988786/).
+*Abstract*
+
+This repository was developed as part of a research endeavour in the field of image-based novelty detection, with a focus on applications in lunar exploration. It provides a modular and flexible framework for image processing and machine learning research, accommodating a range of  experiments from individual model evaluations to comprehensive multi-model analyses. The framework is designed for ease of use and modularity, featuring parameterizable modules and ready to use models, including CAE, VAE, and PCA. This design facilitates straightforward model swapping and efficient serialization, ensuring a clean and understandable codebase. It serves as a crucial resource for researchers and practitioners in the domains of image processing and space exploration technology.
+
+> [!tip]
+>
+> When citing this work, you can use the **Cite this repository** button to the right.
+
+*Related publications*
+
+1. Stefanuk, B. and Skonieczny, K., (2022). Novelty detection in rover‑based planetary surface images using autoencoders. Front. Robot. AI, 9:974397. [doi.org/10.3389/frobt.2022.974397](https://doi.org/10.3389/frobt.2022.974397)
+
+2. Stefanuk, B. (2021). Image-based novelty detection for lunar exploration. Master’s thesis. Montreal, Canada. Concordia University.
+
+
 
 ## Usage and Terminology
 
