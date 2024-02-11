@@ -2,11 +2,12 @@
 # Visit https://bit.ly/cffinit to generate yours today!
 
 cff-version: 1.2.0
-title: Visual Novelty Detection Framework for Lunar Rovers
+title: Novelty Detection Framework for Planetary Exploration
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
 type: software
+date-released: 2022-08-02
 authors:
   - given-names: Braden
     family-names: Stefanuk
@@ -20,8 +21,8 @@ repository-code: 'https://github.com/brahste/novelty-detection'
 abstract: >-
   This repository was developed as part of a research
   endeavour in the field of image-based novelty detection,
-  with a focus on applications in lunar exploration. It
-  provides a modular and flexible framework for image
+  with a focus on applications in lunar and martian exploration. 
+  It provides a modular and flexible framework for image
   processing and machine learning research, accommodating a
   range of experiments from individual model evaluations to
   comprehensive multi-model analyses. The framework is
