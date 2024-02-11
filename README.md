@@ -1,6 +1,4 @@
-# Novelty Detection Framework
-
-*for Planetary Exploration*
+# Planetary Novelty Detection Framework
 
 ![IMG_0436](figures/coverphoto.png)
 
@@ -11,7 +9,7 @@ clean and understandable codebase. It serves as a crucial resource for researche
 >
 > When citing this work, you can use the **Cite this repository** button to the right, or for IEEE
 > ```
-> B. Stefanuk and A. Pascual, Visual Novelty Detection Framework for Lunar Rovers.
+> B. Stefanuk and A. Pascual, Planetary Novelty Detection Framework.
 > 2022. [Online]. Available: https://github.com/brahste/novelty-detection
 > ```
 
