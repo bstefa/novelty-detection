@@ -1,0 +1,44 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Visual Novelty Detection for Lunar Rovers
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Braden
+    family-names: Stefanuk
+    email: bstefanuk@gmail.com
+    affiliation: Concordia University
+    orcid: 'https://orcid.org/0009-0001-4821-5065'
+  - given-names: Alexis
+    family-names: Pascual
+    affiliation: Western University
+repository-code: 'https://github.com/brahste/novelty-detection'
+abstract: >-
+  This repository was developed as part of a research
+  endeavour in the field of image-based novelty detection,
+  with a focus on applications in lunar exploration. It
+  provides a modular and flexible framework for image
+  processing and machine learning research, accommodating a
+  range of experiments from individual model evaluations to
+  comprehensive multi-model analyses. The framework is
+  designed for ease of use and modularity, featuring
+  parameterizable modules and ready to use models, including
+  CAE, VAE, and PCA. This design facilitates straightforward
+  model swapping and efficient serialization, ensuring a
+  clean and understandable codebase. It serves as a crucial
+  resource for researchers and practitioners in the domains
+  of image processing and space exploration technology.
+keywords:
+  - Novelty detection
+  - Anomaly detection
+  - Computer vision
+  - Autoencoders
+  - Deep learning
+  - Machine learning
+  - Mobile robotics
+  - Autonomous systems
+license: Apache-2.0
